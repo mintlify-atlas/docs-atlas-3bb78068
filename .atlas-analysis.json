@@ -1,24 +1,11 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
-  "name": "Kubescape",
+  "projectType": "cli-tool",
+  "projectName": "Kubescape",
+  "projectDescription": "An open-source Kubernetes security CLI that scans clusters, manifests, and container images for misconfigurations, vulnerabilities, and compliance issues across NSA-CISA, MITRE ATT&CK, and CIS frameworks.",
   "theme": "aspen",
-  "colors": {
-    "primary": "#9c9c9c",
-    "light": "#3d3c3c",
-    "dark": "#d2d1d1"
-  },
-  "favicon": "https://media.brand.dev/4c266f9d-a8c2-4e95-9b4d-403a6fc729cc.png",
-  "navbar": {
-    "primary": {
-      "type": "github",
-      "href": "https://github.com/kubescape/kubescape"
-    }
-  },
-  "footer": {
-    "socials": {
-      "github": "https://github.com/kubescape/kubescape"
-    }
-  },
+  "primaryColor": "#9c9c9c",
+  "lightColor": "#3d3c3c",
+  "darkColor": "#d2d1d1",
   "navigation": {
     "tabs": [
       {
@@ -91,5 +78,35 @@
         ]
       }
     ]
-  }
+  },
+  "keyFeatures": [
+    "Misconfiguration scanning against NSA-CISA, MITRE ATT&CK, and CIS Benchmarks",
+    "Container image vulnerability scanning using Grype",
+    "Automatic remediation of misconfigurations in manifest files",
+    "Image patching using Copacetic and BuildKit",
+    "Validating Admission Policy (VAP) management with CEL",
+    "In-cluster continuous monitoring via Helm operator",
+    "eBPF-based runtime security via Inspektor Gadget",
+    "MCP server for AI assistant integration",
+    "Offline/air-gapped environment support",
+    "CI/CD integration with GitHub Actions, GitLab CI, and Jenkins"
+  ],
+  "publicApiSurface": [
+    "kubescape scan",
+    "kubescape scan framework <name>",
+    "kubescape scan control <id>",
+    "kubescape scan workload <kind>/<name>",
+    "kubescape scan image <image>:<tag>",
+    "kubescape fix <report-file>",
+    "kubescape patch --image <image>",
+    "kubescape list frameworks|controls",
+    "kubescape download artifacts|framework|control",
+    "kubescape vap deploy-library",
+    "kubescape vap create-policy-binding",
+    "kubescape operator scan configurations|vulnerabilities",
+    "kubescape mcpserver",
+    "kubescape config view|set|delete",
+    "kubescape completion bash|zsh|fish|powershell",
+    "kubescape version"
+  ]
 }

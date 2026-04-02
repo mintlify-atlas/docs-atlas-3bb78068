@@ -1,0 +1,62 @@
+---
+title: "kubescape download"
+description: "Download policy artifacts for offline or air-gapped Kubescape use."
+keywords: ["kubescape download", "artifacts", "offline", "air-gapped", "framework", "control", "download"]
+---
+
+## Synopsis
+
+```bash
+kubescape download <type> [name] [flags]
+```
+
+## Types
+
+| Type | Description |
+|------|-------------|
+| `artifacts` | Download all artifacts (frameworks, controls, and configuration) |
+| `framework` | Download a specific framework by name |
+| `control` | Download a specific control by ID |
+| `exceptions` | Download configured exceptions |
+| `controls-inputs` | Download configured controls inputs |
+
+## Flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `-o, --output <path>` | Output path or file. If omitted, saves to `~/.kubescape/<name>.json` | `~/.kubescape` |
+| `--account <id>` | Kubescape SaaS account ID | from cache |
+| `--access-key <key>` | Kubescape SaaS access key | from cache |
+
+## Examples
+
+```bash
+# Download all artifacts to the default cache directory
+kubescape download artifacts
+
+# Download all artifacts to a specific directory
+kubescape download artifacts --output /path/to/offline
+
+# Download the NSA framework
+kubescape download framework nsa
+
+# Download the NSA framework to a specific file
+kubescape download framework nsa --output /path/to/nsa.json
+
+# Download a specific control
+kubescape download control C-0001
+
+# Download configured exceptions
+kubescape download exceptions
+
+# Download configured controls inputs
+kubescape download controls-inputs
+```
+
+<Note>
+After downloading artifacts, pass the directory to `kubescape scan` with `--use-artifacts-from` to run in offline mode:
+
+```bash
+kubescape scan --use-artifacts-from /path/to/offline
+```
+</Note>

@@ -1,0 +1,66 @@
+---
+title: "kubescape operator"
+description: "Trigger configuration and vulnerability scans through the in-cluster Kubescape operator."
+keywords: ["kubescape operator", "in-cluster", "operator scan", "configurations", "vulnerabilities", "helm"]
+---
+
+## Synopsis
+
+```bash
+kubescape operator scan <type> [flags]
+```
+
+## Prerequisites
+
+The [Kubescape operator](https://github.com/kubescape/helm-charts/tree/main/charts/kubescape-operator) must be installed in your cluster and `kubectl` must be configured with access to that cluster.
+
+## Scan types
+
+| Type | Description |
+|------|-------------|
+| `configurations` | Trigger a configuration security scan |
+| `vulnerabilities` | Trigger a vulnerability scan |
+
+## Flags (operator scan)
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--namespace <ns>` | Namespace where the Kubescape operator is installed | `kubescape` |
+
+## Flags (operator scan configurations)
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--include-namespaces <ns>` | Namespaces to scan, comma-separated | — |
+| `--exclude-namespaces <ns>` | Namespaces to exclude, comma-separated | — |
+| `--frameworks <names>` | Frameworks to load for the configuration scan | — |
+
+## Flags (operator scan vulnerabilities)
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--include-namespaces <ns>` | Namespaces to scan, comma-separated | — |
+
+## Examples
+
+```bash
+# Trigger a configuration scan
+kubescape operator scan configurations
+
+# Trigger a vulnerability scan
+kubescape operator scan vulnerabilities
+
+# Scan specific namespaces for configurations
+kubescape operator scan configurations --include-namespaces production,staging
+
+# Trigger a scan using an operator installed in a custom namespace
+kubescape operator scan configurations --namespace my-kubescape-ns
+```
+
+<Note>
+After triggering a vulnerability scan, view the results once they are ready with:
+
+```bash
+kubectl get vulnerabilitysummaries
+```
+</Note>

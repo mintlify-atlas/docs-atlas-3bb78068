@@ -1,0 +1,73 @@
+---
+title: "kubescape fix"
+description: "Auto-fix misconfigurations in Kubernetes manifest files using scan output."
+keywords: ["kubescape fix", "auto-fix", "remediation", "misconfiguration", "manifest", "dry-run"]
+---
+
+## Synopsis
+
+```bash
+kubescape fix <report-file> [flags]
+```
+
+`<report-file>` is the JSON output file produced by `kubescape scan --format json`.
+
+<Warning>
+This command modifies your manifest files **in place**. Back up files or use `--dry-run` before applying changes in production.
+</Warning>
+
+## Flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--dry-run` | Preview proposed changes without writing anything to disk | `false` |
+| `--no-confirm` | Apply fixes without asking for confirmation | `false` |
+| `--skip-user-values` | Skip fixes that require user-supplied values | `true` |
+
+## Workflow
+
+<Steps>
+  <Step title="Scan and save results">
+    Run a scan against your manifest files and write the output to a JSON file.
+
+    ```bash
+    kubescape scan /path/to/manifests --format json --output results.json
+    ```
+  </Step>
+  <Step title="Preview fixes (optional)">
+    Inspect what changes `fix` would make before applying them.
+
+    ```bash
+    kubescape fix results.json --dry-run
+    ```
+  </Step>
+  <Step title="Apply fixes">
+    Apply the fixes, confirming each change interactively.
+
+    ```bash
+    kubescape fix results.json
+    ```
+
+    To apply all fixes without prompts:
+
+    ```bash
+    kubescape fix results.json --no-confirm
+    ```
+  </Step>
+</Steps>
+
+## Examples
+
+```bash
+# Generate scan results for a directory of manifests
+kubescape scan /path/to/manifests --format json --output results.json
+
+# Preview fixes without applying
+kubescape fix results.json --dry-run
+
+# Apply fixes with interactive confirmation
+kubescape fix results.json
+
+# Apply all fixes without prompts
+kubescape fix results.json --no-confirm
+```

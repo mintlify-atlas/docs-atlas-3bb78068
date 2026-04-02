@@ -1,0 +1,99 @@
+---
+title: "Validating Admission Policies"
+description: "Enforce Kubescape security controls at admission time using Kubernetes Validating Admission Policies and CEL."
+---
+
+Kubernetes [Validating Admission Policies](https://kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy/) (VAP) let you enforce security rules directly in the API server using [CEL (Common Expression Language)](https://kubernetes.io/docs/reference/using-api/cel/). Kubescape provides a CEL policy library and tooling to deploy and bind these policies to resources in your cluster.
+
+<Note>
+  VAP reached GA in Kubernetes 1.30. The feature is available as beta from Kubernetes 1.28 and as alpha from Kubernetes 1.26. Check your cluster version before proceeding.
+</Note>
+
+<Warning>
+  This is an experimental feature and the command interface may change in future releases.
+</Warning>
+
+## Deploy the policy library
+
+The `vap deploy-library` command downloads the Kubescape CEL admission policy library from the latest GitHub release and prints it to stdout. Pipe the output to `kubectl apply` to install it.
+
+```bash
+kubescape vap deploy-library | kubectl apply -f -
+```
+
+This installs three components:
+
+| Component | Description |
+|-----------|-------------|
+| `policy-configuration-definition.yaml` | The `PolicyConfiguration` Custom Resource Definition used to configure controls. |
+| `basic-control-configuration.yaml` | Default control configuration objects. |
+| `kubescape-validating-admission-policies.yaml` | The full set of Kubescape VAP policies expressed in CEL. |
+
+## Create a policy binding
+
+Once the library is deployed, use `vap create-policy-binding` to bind a specific policy to a set of resources. The command prints a `ValidatingAdmissionPolicyBinding` manifest to stdout. Pipe to `kubectl apply` to activate it.
+
+```bash
+kubescape vap create-policy-binding \
+  --name my-policy-binding \
+  --policy c-0016 \
+  --namespace my-namespace | kubectl apply -f -
+```
+
+### Flags
+
+| Flag | Short | Required | Default | Description |
+|------|-------|----------|---------|-------------|
+| `--name` | `-n` | Yes | | Name for the `ValidatingAdmissionPolicyBinding` object. Must be a valid Kubernetes object name. |
+| `--policy` | `-p` | Yes | | Name of the policy (control ID) to bind, e.g. `c-0016`. |
+| `--namespace` | | No | | Namespace selector. Restricts the binding to resources in the specified namespace(s). Accepts multiple values. |
+| `--label` | | No | | Object label selector in `key=value` format. Restricts the binding to resources with matching labels. Accepts multiple values. |
+| `--action` | `-a` | No | `Deny` | Action taken when a resource fails the policy. One of `Deny`, `Audit`, or `Warn`. |
+| `--parameter-reference` | `-r` | No | | Name of a parameter reference object to pass to the policy. |
+
+## Examples
+
+### Deny privileged containers in a production namespace
+
+Bind control `c-0057` (privilege escalation) to the `production` namespace with a `Deny` action. Any new workload that violates the policy will be rejected at admission time.
+
+```bash
+kubescape vap create-policy-binding \
+  --name deny-privileged-production \
+  --policy c-0057 \
+  --namespace production \
+  --action Deny | kubectl apply -f -
+```
+
+### Audit mode for a gradual rollout
+
+Use `Audit` to log violations without blocking deployments. This lets you assess the impact of a policy before enforcing it.
+
+```bash
+kubescape vap create-policy-binding \
+  --name audit-privileged-all \
+  --policy c-0057 \
+  --action Audit | kubectl apply -f -
+```
+
+Violations appear in the Kubernetes API server audit log and can be reviewed before switching the binding to `Deny`.
+
+<Tip>
+  Start with `--action Audit` when rolling out a new policy to an existing cluster. Once you are confident no legitimate workloads are affected, update the binding to `--action Deny`.
+</Tip>
+
+### Target resources by label
+
+Restrict a binding to resources that carry a specific label:
+
+```bash
+kubescape vap create-policy-binding \
+  --name deny-privileged-labeled \
+  --policy c-0057 \
+  --label env=production \
+  --action Deny | kubectl apply -f -
+```
+
+<Note>
+  Label selectors must use the exact format `key=value` with alphanumeric characters only.
+</Note>

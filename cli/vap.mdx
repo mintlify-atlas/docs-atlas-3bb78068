@@ -1,0 +1,81 @@
+---
+title: "kubescape vap"
+description: "Manage Kubernetes Validating Admission Policies using the Kubescape CEL library."
+keywords: ["kubescape vap", "validating admission policy", "CEL", "policy binding", "admission control", "kubernetes"]
+---
+
+## Synopsis
+
+```bash
+kubescape vap <subcommand> [flags]
+```
+
+<Note>
+The `vap` command is experimental and may change in future releases.
+</Note>
+
+The `vap` command outputs YAML to stdout. Pipe the output to `kubectl apply -f -` to apply it to your cluster.
+
+## Subcommands
+
+### deploy-library
+
+Deploy the Kubescape CEL admission policy library to the cluster.
+
+```bash
+kubescape vap deploy-library | kubectl apply -f -
+```
+
+This downloads and prints the following manifests from the latest release of the [cel-admission-library](https://github.com/kubescape/cel-admission-library):
+
+- `policy-configuration-definition.yaml`
+- `basic-control-configuration.yaml`
+- `kubescape-validating-admission-policies.yaml`
+
+---
+
+### create-policy-binding
+
+Generate a `ValidatingAdmissionPolicyBinding` manifest.
+
+```bash
+kubescape vap create-policy-binding [flags] | kubectl apply -f -
+```
+
+#### Flags
+
+| Flag | Description | Required | Default |
+|------|-------------|----------|---------|
+| `-n, --name <name>` | Name of the policy binding (must be a valid Kubernetes object name) | Yes | — |
+| `-p, --policy <id>` | Policy or control ID to bind (e.g., `c-0057`) | Yes | — |
+| `--namespace <ns>` | Namespace selector; can be repeated for multiple namespaces | No | — |
+| `--label <k=v>` | Label selector in `key=value` format; can be repeated | No | — |
+| `-a, --action <action>` | Validation action: `Deny`, `Audit`, or `Warn` | No | `Deny` |
+| `-r, --parameter-reference <name>` | Name of the parameter reference object | No | — |
+
+## Examples
+
+```bash
+# Deploy the full CEL policy library to the cluster
+kubescape vap deploy-library | kubectl apply -f -
+
+# Create a binding that denies privileged containers in the production namespace
+kubescape vap create-policy-binding \
+  --name deny-privileged \
+  --policy c-0057 \
+  --namespace production \
+  --action Deny | kubectl apply -f -
+
+# Create a binding that audits a control across all namespaces
+kubescape vap create-policy-binding \
+  --name audit-hostpid \
+  --policy c-0016 \
+  --action Audit | kubectl apply -f -
+
+# Create a binding with a label selector
+kubescape vap create-policy-binding \
+  --name deny-no-limits \
+  --policy c-0009 \
+  --label env=production \
+  --action Deny | kubectl apply -f -
+```

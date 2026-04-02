@@ -1,0 +1,138 @@
+---
+title: "Scanning files and repositories"
+description: "Scan local YAML files, Helm charts, Kustomize directories, and remote Git repositories for Kubernetes misconfigurations."
+---
+
+Kubescape can evaluate Kubernetes manifests before they reach a cluster. This lets you catch misconfigurations during development or in CI/CD pipelines.
+
+## Local YAML files and directories
+
+Pass a file path or directory to scan manifests directly:
+
+```bash
+# Scan a single file
+kubescape scan /path/to/deployment.yaml
+
+# Scan all manifests in a directory (recursive)
+kubescape scan /path/to/manifests/
+
+# Scan the current directory
+kubescape scan .
+```
+
+Kubescape processes all `.yaml` and `.json` files it finds and evaluates them against the default set of controls.
+
+## Helm charts
+
+Point Kubescape at a Helm chart directory:
+
+```bash
+kubescape scan /path/to/helm/chart/
+```
+
+<Note>
+  Kubescape renders the chart using the default `values.yaml` file. To scan with custom values, render the chart to YAML first with `helm template` and then scan the rendered output.
+</Note>
+
+## Kustomize directories
+
+Kubescape detects a `kustomization.yaml` file and runs `kustomize build` internally before scanning:
+
+```bash
+kubescape scan /path/to/kustomize/directory/
+```
+
+The generated Kubernetes objects are scanned without writing any intermediate files to disk.
+
+## Remote Git repositories
+
+Scan a repository directly from its URL:
+
+```bash
+kubescape scan https://github.com/kubescape/kubescape
+```
+
+Kubescape clones the repository and scans all Kubernetes manifests it finds. This works with any publicly accessible Git repository.
+
+## Using an exceptions file
+
+Exceptions let you acknowledge known issues or suppress findings for resources that have intentional configurations. Excepted resources appear as `exclude` in the output instead of `fail`.
+
+```bash
+kubescape scan --exceptions examples/exceptions/exclude-kube-namespaces.json
+```
+
+An exceptions file is a JSON document that identifies specific resources and controls to exclude. For example:
+
+```json
+[
+  {
+    "name": "exclude-kube-namespaces",
+    "policyType": "postureExceptionPolicy",
+    "actions": ["alertOnly"],
+    "resources": [
+      {
+        "designatorType": "Attributes",
+        "attributes": {
+          "namespace": "kube-system"
+        }
+      }
+    ]
+  }
+]
+```
+
+<Tip>
+  Use exceptions to establish a security baseline. Excepted resources still appear in the output, so you can detect drift over time when new resources are added that weren't part of the original exception.
+</Tip>
+
+## Scanning against a specific framework
+
+All of the targets above can be combined with a framework scan:
+
+```bash
+kubescape scan framework nsa /path/to/manifests/
+kubescape scan framework cis-v1.23-t1.0.1 https://github.com/org/repo
+```
+
+See [Frameworks and controls](/scanning/frameworks-and-controls) for the full list of available frameworks.
+
+## Output formats
+
+File and repository scans support all output formats, including SARIF (which is not available for live cluster scans):
+
+```bash
+# SARIF for GitHub Code Scanning
+kubescape scan /path/to/manifests/ --format sarif --output results.sarif
+
+# JSON for programmatic processing
+kubescape scan /path/to/manifests/ --format json --output results.json
+```
+
+See [Output formats](/scanning/output-formats) for details on each format.
+
+## Saving results for auto-fix
+
+After scanning local files, you can pass the JSON results to `kubescape fix` to automatically remediate misconfigurations:
+
+<Steps>
+  <Step title="Scan and save results">
+    ```bash
+    kubescape scan /path/to/manifests --format json --output results.json
+    ```
+  </Step>
+  <Step title="Preview the proposed fixes">
+    ```bash
+    kubescape fix results.json --dry-run
+    ```
+  </Step>
+  <Step title="Apply the fixes">
+    ```bash
+    kubescape fix results.json
+    ```
+  </Step>
+</Steps>
+
+<Warning>
+  `kubescape fix` modifies manifest files in place. Always review changes with `--dry-run` before applying.
+</Warning>

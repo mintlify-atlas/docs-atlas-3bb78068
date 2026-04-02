@@ -1,0 +1,95 @@
+---
+title: "Patching container images"
+description: "Automatically patch OS-level vulnerabilities in container images using Kubescape, Copacetic, and BuildKit."
+---
+
+Kubescape can patch container images to remove known OS-level vulnerabilities. It uses [Copacetic](https://github.com/project-copacetic/copacetic) for patching and [BuildKit](https://github.com/moby/buildkit) as the build backend, and scans images with [Grype](https://github.com/anchore/grype) before and after patching.
+
+<Warning>
+  The `patch` command fixes **OS-level vulnerabilities only**. Application-level vulnerabilities (for example, a vulnerable library bundled inside an application binary) are not patched. These are best addressed by the application's developers. Windows containers are not supported.
+</Warning>
+
+## Prerequisites
+
+- A Docker daemon installed and running.
+- A BuildKit daemon installed.
+
+## Basic usage
+
+<Steps>
+  <Step title="Start the BuildKit daemon">
+    Run `buildkitd` in a separate terminal. This requires `sudo` because buildkitd runs as root by default.
+
+    ```bash
+    sudo buildkitd
+    ```
+  </Step>
+
+  <Step title="Patch the image">
+    In another terminal, run `kubescape patch` with the fully qualified image name.
+
+    ```bash
+    sudo kubescape patch --image docker.io/library/nginx:1.22
+    ```
+
+    Kubescape will scan the image, apply available OS-level patches, and load the patched image locally. By default the patched image is tagged `<original-tag>-patched` — for example, `nginx:1.22-patched`.
+  </Step>
+</Steps>
+
+## Flags
+
+| Flag | Short | Default | Description |
+|------|-------|---------|-------------|
+| `--image` | `-i` | _(required)_ | Image name and tag to patch. |
+| `--tag` | `-t` | `<image-tag>-patched` | Tag for the resulting patched image. |
+| `--address` | `-a` | `unix:///run/buildkit/buildkitd.sock` | Address of the BuildKit daemon. |
+| `--timeout` | | `5m` | Timeout for the patching operation. |
+| `--username` | `-u` | | Username for registry authentication. |
+| `--password` | `-p` | | Password for registry authentication. |
+| `--verbose` | `-v` | `false` | Show the full vulnerability report. |
+| `--ignore-errors` | | `false` | Continue patching other images if an error occurs. |
+
+## Custom output tag
+
+Use `--tag` to control what the patched image is called:
+
+```bash
+sudo kubescape patch --image docker.io/library/nginx:1.22 --tag nginx:1.22-patched
+```
+
+## Running without sudo
+
+If you cannot run commands as root, start BuildKit as a Docker container and connect to it over TCP.
+
+<Steps>
+  <Step title="Start BuildKit in Docker">
+    ```bash
+    export BUILDKIT_VERSION=v0.11.4
+    export BUILDKIT_PORT=8888
+
+    docker run \
+        --detach \
+        --rm \
+        --privileged \
+        -p 127.0.0.1:$BUILDKIT_PORT:$BUILDKIT_PORT/tcp \
+        --name buildkitd \
+        --entrypoint buildkitd \
+        "moby/buildkit:$BUILDKIT_VERSION" \
+        --addr tcp://0.0.0.0:$BUILDKIT_PORT
+    ```
+  </Step>
+
+  <Step title="Patch using the TCP address">
+    Point `--address` at the TCP port instead of the default Unix socket.
+
+    ```bash
+    kubescape patch \
+        --image nginx:1.22 \
+        --address tcp://0.0.0.0:$BUILDKIT_PORT
+    ```
+  </Step>
+</Steps>
+
+<Note>
+  When no tag is provided, Kubescape defaults to `latest`. Always specify an explicit tag to avoid patching unintended image versions.
+</Note>

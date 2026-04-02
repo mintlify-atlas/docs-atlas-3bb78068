@@ -1,0 +1,42 @@
+---
+title: "kubescape list"
+description: "List available security frameworks and controls."
+keywords: ["kubescape list", "frameworks", "controls", "security", "list"]
+---
+
+## Synopsis
+
+```bash
+kubescape list <type> [flags]
+```
+
+## Types
+
+| Type | Description |
+|------|-------------|
+| `frameworks` | List available security frameworks |
+| `controls` | List available security controls |
+
+## Flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--account <id>` | Kubescape SaaS account ID (loads custom frameworks when set) | from cache |
+| `--access-key <key>` | Kubescape SaaS access key | from cache |
+| `--format <format>` | Output format: `pretty-print`, `json` | `pretty-print` |
+
+## Examples
+
+```bash
+# List default supported frameworks
+kubescape list frameworks
+
+# List all frameworks including custom ones (requires account ID)
+kubescape list frameworks --account <account-id>
+
+# List all controls
+kubescape list controls
+
+# List controls in JSON format
+kubescape list controls --format json
+```

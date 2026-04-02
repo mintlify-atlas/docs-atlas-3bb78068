@@ -1,0 +1,148 @@
+---
+title: "In-cluster operator"
+description: "Deploy the Kubescape operator for continuous Kubernetes security monitoring."
+---
+
+The Kubescape operator runs as a set of Kubernetes workloads deployed via Helm. Unlike the CLI, which scans on demand, the operator continuously watches your cluster for changes, schedules scans automatically, and stores results as Custom Resources that you can query at any time — including with the CLI and AI assistants via the MCP server.
+
+## What the operator does
+
+<CardGroup cols={2}>
+  <Card title="Continuous config scanning" icon="shield-check">
+    Evaluates all workloads and cluster configurations on a schedule and whenever resources change.
+  </Card>
+  <Card title="Image vulnerability scanning" icon="bug">
+    Scans container images running in the cluster and tracks CVEs per workload.
+  </Card>
+  <Card title="Runtime eBPF detection" icon="radar">
+    Uses Inspektor Gadget to observe kernel-level events and detect runtime threats without modifying your workloads.
+  </Card>
+  <Card title="Network policy generation" icon="network-wired">
+    Observes actual network connections to generate least-privilege NetworkPolicy resources.
+  </Card>
+  <Card title="Prometheus metrics" icon="chart-line">
+    Exposes compliance and vulnerability metrics for integration with Grafana and alerting systems.
+  </Card>
+  <Card title="Queryable results" icon="database">
+    Stores all scan results as Custom Resources in the cluster, readable by kubectl, the CLI, and the MCP server.
+  </Card>
+</CardGroup>
+
+## Install the operator
+
+<Steps>
+  <Step title="Add the Helm repository">
+    ```bash
+    helm repo add kubescape https://kubescape.github.io/helm-charts/
+    helm repo update
+    ```
+  </Step>
+
+  <Step title="Install the operator">
+    ```bash
+    helm upgrade --install kubescape kubescape/kubescape-operator \
+      --namespace kubescape \
+      --create-namespace
+    ```
+
+    This installs the operator with default settings. Both configuration scanning and vulnerability scanning are enabled by default.
+  </Step>
+
+  <Step title="Verify the installation">
+    Wait for the operator pods to become ready:
+
+    ```bash
+    kubectl -n kubescape get pods
+    ```
+
+    Once the initial scans complete, check that results are being written:
+
+    ```bash
+    kubectl -n kubescape get vulnerabilitymanifests
+    kubectl -n kubescape get workloadconfigurationscans
+    ```
+  </Step>
+</Steps>
+
+## Enable capabilities
+
+You can enable or disable specific capabilities at install time using `--set` flags:
+
+```bash
+helm upgrade --install kubescape kubescape/kubescape-operator \
+  --namespace kubescape \
+  --create-namespace \
+  --set capabilities.vulnerabilityScan=enable \
+  --set capabilities.configurationScan=enable
+```
+
+To enable runtime security and network policy generation:
+
+```bash
+helm upgrade --install kubescape kubescape/kubescape-operator \
+  --namespace kubescape \
+  --create-namespace \
+  --set capabilities.vulnerabilityScan=enable \
+  --set capabilities.configurationScan=enable \
+  --set capabilities.runtimeObservability=enable \
+  --set capabilities.networkPolicyService=enable
+```
+
+<Note>
+  Runtime security requires kernel support for eBPF. Most modern cloud-managed Kubernetes distributions (GKE, EKS, AKS) meet this requirement. Check your kernel version with `uname -r` — version 5.4 or later is recommended.
+</Note>
+
+## Custom Resources
+
+The operator stores all scan results as Kubernetes Custom Resources. You can query them directly with `kubectl`:
+
+| CRD | Description |
+|-----|-------------|
+| `VulnerabilityManifest` | Image vulnerability scan results per workload |
+| `VulnerabilityManifestSummary` | Aggregated vulnerability summaries |
+| `WorkloadConfigurationScan` | Misconfiguration scan results per workload |
+| `WorkloadConfigurationScanSummary` | Aggregated configuration summaries |
+| `ApplicationProfile` | Runtime behavior profiles built from eBPF observations |
+| `NetworkNeighborhood` | Observed network connections used for policy generation |
+
+```bash
+# List all vulnerability manifests
+kubectl -n kubescape get vulnerabilitymanifests
+
+# Inspect a specific workload's vulnerability results
+kubectl -n kubescape get vulnerabilitymanifest deployment-nginx-nginx -o yaml
+
+# List configuration scan results across all namespaces
+kubectl get workloadconfigurationscans -A
+```
+
+## Trigger scans from the CLI
+
+You can trigger on-demand scans against the in-cluster operator from the CLI without waiting for the next scheduled run:
+
+```bash
+# Trigger a configuration scan
+kubescape operator scan configurations
+
+# Trigger a vulnerability scan
+kubescape operator scan vulnerabilities
+```
+
+<Tip>
+  On-demand scans are useful after deploying new workloads or applying configuration changes and you want immediate results rather than waiting for the next scheduled scan.
+</Tip>
+
+## Prometheus metrics
+
+When the operator is running, it exposes Prometheus-compatible metrics. Add a `ServiceMonitor` or configure your Prometheus instance to scrape the `kubescape` namespace to collect compliance scores, vulnerability counts, and scan durations.
+
+## What to do next
+
+<CardGroup cols={2}>
+  <Card title="MCP server" icon="robot" href="/integrations/mcp-server">
+    Query operator scan results using natural language via AI assistants.
+  </Card>
+  <Card title="Architecture" icon="sitemap" href="/reference/architecture">
+    Understand how the operator components fit together.
+  </Card>
+</CardGroup>

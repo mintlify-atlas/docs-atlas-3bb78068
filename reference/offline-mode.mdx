@@ -1,0 +1,162 @@
+---
+title: "Offline mode"
+description: "Run Kubescape in air-gapped environments by pre-downloading frameworks, controls, and vulnerability databases."
+---
+
+Kubescape can run fully offline. All policy artifacts (frameworks, controls, and configuration) and vulnerability databases can be downloaded on a connected machine and transferred to an air-gapped system.
+
+<Note>
+For a video walkthrough, see the [Kubescape offline support tutorial](https://youtu.be/IGXL9s37smM).
+</Note>
+
+---
+
+## Downloading and using artifacts
+
+Use this workflow to prepare an air-gapped environment.
+
+<Steps>
+  <Step title="Download all artifacts">
+    On a machine with internet access, download all frameworks, controls, and configuration files to a local directory:
+
+    ```bash
+    kubescape download artifacts --output /path/to/offline/dir
+    ```
+
+    If `--output` is omitted, artifacts are saved to `~/.kubescape`.
+  </Step>
+
+  <Step title="Copy to the air-gapped system">
+    Transfer the directory to the target machine using your preferred method (USB, secure copy, artifact repository, etc.).
+  </Step>
+
+  <Step title="Scan using the downloaded artifacts">
+    On the air-gapped system, point Kubescape at the local directory:
+
+    ```bash
+    kubescape scan --use-artifacts-from /path/to/offline/dir
+    ```
+  </Step>
+</Steps>
+
+---
+
+## Downloading a single framework
+
+If you only need a specific framework, download it individually:
+
+<Steps>
+  <Step title="Download a specific framework">
+    ```bash
+    kubescape download framework nsa --output /path/to/nsa.json
+    ```
+
+    If `--output` is omitted, the file is saved as `~/.kubescape/<framework-name>.json`.
+  </Step>
+
+  <Step title="Copy to the air-gapped system">
+    Transfer the JSON file to the target machine.
+  </Step>
+
+  <Step title="Scan using the downloaded framework">
+    ```bash
+    kubescape scan framework nsa --use-from /path/to/nsa.json
+    ```
+  </Step>
+</Steps>
+
+---
+
+## Downloading a specific control
+
+To download an individual control:
+
+```bash
+kubescape download control <control-id>
+```
+
+---
+
+## Offline image scanning
+
+Image vulnerability scanning requires a Grype vulnerability database. You can serve this database locally using the official offline database image.
+
+<Steps>
+  <Step title="Start the offline Grype database server">
+    On the air-gapped system (or a system with access to the image), run:
+
+    ```bash
+    docker run --rm -p 8080:8080 quay.io/kubescape/grype-offline-db:v6-latest
+    ```
+
+    This starts an HTTP server on port 8080 that serves the vulnerability database.
+  </Step>
+
+  <Step title="Scan an image using the local database">
+    Point Kubescape at the local database server:
+
+    ```bash
+    kubescape scan image --grype-db-url http://localhost:8080/databases/ nginx:latest
+    ```
+  </Step>
+</Steps>
+
+<Warning>
+The offline Grype database is pinned to a specific release. Update it periodically to ensure you have current CVE data.
+</Warning>
+
+---
+
+## Available download types
+
+The `kubescape download` command supports:
+
+| Type | Description |
+|------|-------------|
+| `artifacts` | All frameworks, controls, and configuration |
+| `framework <name>` | A specific security framework |
+| `control <id>` | A specific security control |
+
+### Flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `-o, --output <path>` | Output file or directory path | `~/.kubescape` |
+| `--account <id>` | Account ID (for custom frameworks) | — |
+| `--access-key <key>` | Access key | — |
+
+---
+
+## CodeGroup examples
+
+<CodeGroup>
+
+```bash Download all artifacts
+kubescape download artifacts --output /path/to/offline/dir
+```
+
+```bash Download a framework
+kubescape download framework nsa --output /path/to/nsa.json
+```
+
+```bash Download a control
+kubescape download control C-0057
+```
+
+</CodeGroup>
+
+<CodeGroup>
+
+```bash Scan with all artifacts
+kubescape scan --use-artifacts-from /path/to/offline/dir
+```
+
+```bash Scan with a specific framework file
+kubescape scan framework nsa --use-from /path/to/nsa.json
+```
+
+```bash Scan image with offline DB
+kubescape scan image --grype-db-url http://localhost:8080/databases/ nginx:latest
+```
+
+</CodeGroup>

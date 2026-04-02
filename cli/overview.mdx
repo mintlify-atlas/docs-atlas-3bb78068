@@ -1,0 +1,92 @@
+---
+title: "CLI overview"
+description: "Reference for the Kubescape command-line interface, including global options, environment variables, and exit codes."
+keywords: ["kubescape", "cli", "command line", "reference", "global options", "environment variables", "shell completion"]
+---
+
+Kubescape is a Kubernetes security posture tool. The CLI lets you scan clusters, local manifests, and container images; auto-fix misconfigurations; patch vulnerable images; and manage policies — all from the terminal.
+
+## Global options
+
+These flags are accepted by every Kubescape command.
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--cache-dir <path>` | Cache directory | `~/.kubescape` |
+| `--kube-context <context>` | Kubernetes context to use | current-context |
+| `-l, --logger <level>` | Log level: `debug`, `info`, `warning`, `error`, `fatal` | `info` |
+| `--server <url>` | Backend discovery server URL | — |
+| `-h, --help` | Help for any command | — |
+
+## Environment variables
+
+| Variable | Description |
+|----------|-------------|
+| `KS_ACCOUNT` | Default account ID |
+| `KS_CACHE_DIR` | Cache directory path |
+| `KS_EXCLUDE_NAMESPACES` | Default namespaces to exclude from scans |
+| `KS_INCLUDE_NAMESPACES` | Default namespaces to include in scans |
+| `KS_FORMAT` | Default output format |
+| `KS_LOGGER` | Log level |
+| `KS_LOGGER_NAME` | Logger name |
+| `KUBECONFIG` | Path to kubeconfig file |
+| `HTTPS_PROXY` | HTTPS proxy URL |
+| `HTTP_PROXY` | HTTP proxy URL |
+| `NO_PROXY` | Comma-separated hosts to exclude from proxy |
+
+## Exit codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success |
+| `1` | Failure (scan error, compliance threshold exceeded, severity threshold exceeded, etc.) |
+
+## Shell completion
+
+Generate a shell completion script and source it in your shell:
+
+```bash
+# Bash — write to completion directory
+kubescape completion bash > /etc/bash_completion.d/kubescape
+
+# Zsh — write to first directory in $fpath
+kubescape completion zsh > "${fpath[1]}/_kubescape"
+
+# Fish
+kubescape completion fish > ~/.config/fish/completions/kubescape.fish
+
+# PowerShell
+kubescape completion powershell
+```
+
+## Commands
+
+<CardGroup cols={2}>
+  <Card title="scan" href="/cli/scan">
+    Scan clusters, manifests, and images for misconfigurations and vulnerabilities.
+  </Card>
+  <Card title="fix" href="/cli/fix">
+    Auto-fix misconfigurations in Kubernetes manifest files.
+  </Card>
+  <Card title="patch" href="/cli/patch">
+    Patch container images to remediate OS-level vulnerabilities.
+  </Card>
+  <Card title="list" href="/cli/list">
+    List available frameworks and controls.
+  </Card>
+  <Card title="download" href="/cli/download">
+    Download artifacts for offline or air-gapped use.
+  </Card>
+  <Card title="vap" href="/cli/vap">
+    Manage Kubernetes Validating Admission Policies.
+  </Card>
+  <Card title="operator" href="/cli/operator">
+    Trigger scans through the in-cluster Kubescape operator.
+  </Card>
+  <Card title="mcpserver" href="/cli/mcpserver">
+    Start the MCP server for AI assistant integration.
+  </Card>
+  <Card title="config" href="/cli/config">
+    View and manage cached Kubescape configuration.
+  </Card>
+</CardGroup>

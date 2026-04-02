@@ -1,0 +1,152 @@
+---
+title: "CI/CD integration"
+description: "Integrate Kubescape into GitHub Actions, GitLab CI, and Jenkins pipelines."
+---
+
+Kubescape integrates into your CI pipeline to catch security issues in Kubernetes manifests before they reach the cluster. You can fail builds that fall below a compliance threshold, export results in standard formats like SARIF and JUnit, and run entirely offline in air-gapped environments.
+
+## Key CI patterns
+
+### Exit codes
+
+Kubescape exits with a non-zero code when scans find issues, which causes most CI systems to fail the job automatically:
+
+| Exit code | Meaning |
+|-----------|---------|
+| `0` | Scan passed or no resources found |
+| `1` | Scan found issues below the compliance threshold |
+
+### Compliance threshold
+
+Use `--compliance-threshold` to set a minimum passing score. The job fails if the score falls below this percentage:
+
+```bash
+kubescape scan --compliance-threshold 80
+```
+
+### Output formats
+
+| Format | Flag | Use case |
+|--------|------|----------|
+| JUnit XML | `--format junit` | Standard CI test result reporting |
+| SARIF | `--format sarif` | GitHub Code Scanning integration |
+| JSON | `--format json` | Custom processing and dashboards |
+
+### Offline pipelines
+
+In air-gapped environments, download artifacts before the scan step and reference them locally:
+
+```bash
+# Download artifacts (do this in a separate job or image build step)
+kubescape download artifacts --output /path/to/offline/dir
+
+# Scan using downloaded artifacts
+kubescape scan --use-artifacts-from /path/to/offline/dir
+```
+
+---
+
+## GitHub Actions
+
+Kubescape is available as a GitHub Action on the marketplace: **kubescape/github-action**.
+
+The action wraps the Kubescape CLI and handles installation automatically. It supports all standard scan options including framework selection, compliance thresholds, and SARIF output for GitHub Code Scanning.
+
+<Tip>
+  SARIF output integrates directly with GitHub's Security tab. Use `--format sarif --output results.sarif` and upload the file with the `github/codeql-action/upload-sarif` action to surface findings as code scanning alerts on pull requests.
+</Tip>
+
+---
+
+## GitLab CI
+
+Add a Kubescape scan job to your `.gitlab-ci.yml`. The example below scans all manifests in the repository and produces a JUnit report that GitLab surfaces in the merge request UI:
+
+```yaml .gitlab-ci.yml
+kubescape-scan:
+  stage: test
+  image: ubuntu:22.04
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq curl
+    - curl -s https://raw.githubusercontent.com/kubescape/kubescape/master/install.sh | /bin/bash
+    - export PATH=$PATH:~/.kubescape/
+  script:
+    - kubescape scan .
+        --format junit
+        --output results.xml
+        --compliance-threshold 80
+  artifacts:
+    when: always
+    reports:
+      junit: results.xml
+  allow_failure: false
+```
+
+For SARIF output instead of JUnit, replace the format flags:
+
+```yaml
+  script:
+    - kubescape scan . --format sarif --output results.sarif
+  artifacts:
+    paths:
+      - results.sarif
+```
+
+---
+
+## Jenkins
+
+Add a Kubescape scan stage to your `Jenkinsfile`. The example below installs Kubescape, scans the workspace, and archives the results as a JUnit test report:
+
+```groovy Jenkinsfile
+pipeline {
+    agent any
+
+    stages {
+        stage('Security scan') {
+            steps {
+                sh '''
+                    curl -s https://raw.githubusercontent.com/kubescape/kubescape/master/install.sh | /bin/bash
+                    export PATH=$PATH:~/.kubescape/
+                    kubescape scan . \
+                        --format junit \
+                        --output results.xml \
+                        --compliance-threshold 80
+                '''
+            }
+            post {
+                always {
+                    junit 'results.xml'
+                }
+            }
+        }
+    }
+}
+```
+
+<Note>
+  The `--compliance-threshold` flag causes Kubescape to exit with code `1` if the score falls below the specified percentage. Jenkins treats a non-zero exit as a build failure. Remove the flag if you want the scan to report issues without blocking the build.
+</Note>
+
+---
+
+## Severity-based blocking
+
+Instead of a compliance threshold, you can block on severity:
+
+```bash
+kubescape scan --severity-threshold high
+```
+
+This exits with code `1` if any control failures at the specified severity or higher are found. Useful when you want to allow low-severity issues through while hard-blocking on critical findings.
+
+## What to do next
+
+<CardGroup cols={2}>
+  <Card title="IDE extensions" icon="code" href="/integrations/ide">
+    Catch issues earlier by scanning YAML files as you write them in VS Code or Lens.
+  </Card>
+  <Card title="CLI reference" icon="terminal" href="/cli/overview">
+    Full reference for scan flags, output formats, and filtering options.
+  </Card>
+</CardGroup>

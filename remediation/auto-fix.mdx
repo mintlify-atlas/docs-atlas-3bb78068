@@ -1,0 +1,77 @@
+---
+title: "Auto-fixing misconfigurations"
+description: "Automatically fix Kubernetes manifest misconfigurations found by a Kubescape scan."
+---
+
+Kubescape can fix misconfigurations found in your Kubernetes manifest files. The `fix` command reads a JSON scan report and applies targeted changes directly to the source YAML files.
+
+<Warning>
+  The `fix` command modifies files **in-place**. Always commit or back up your manifests before running, or use `--dry-run` to preview changes first.
+</Warning>
+
+## How it works
+
+The `fix` command does not scan files itself. It takes the output of a previous `kubescape scan` run saved in JSON format and uses it to determine which manifest fields need to change and how to change them.
+
+## Workflow
+
+<Steps>
+  <Step title="Scan your manifests and save results to JSON">
+    Run `kubescape scan` against the directory containing your manifest files. Pass `--format json` and `--output` to write the results to a file.
+
+    ```bash
+    kubescape scan /path/to/manifests --format json --output results.json
+    ```
+  </Step>
+
+  <Step title="Preview changes with --dry-run">
+    Before applying anything, run `fix` with `--dry-run` to see what would change without modifying any files.
+
+    ```bash
+    kubescape fix results.json --dry-run
+    ```
+  </Step>
+
+  <Step title="Apply the fixes">
+    Once you have reviewed the proposed changes, run `fix` without `--dry-run`. Kubescape will prompt you to confirm each change unless you pass `--no-confirm`.
+
+    ```bash
+    kubescape fix results.json
+    ```
+
+    To skip confirmation prompts — for example, in a CI/CD pipeline — use `--no-confirm`:
+
+    ```bash
+    kubescape fix results.json --no-confirm
+    ```
+  </Step>
+</Steps>
+
+## Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--dry-run` | `false` | Preview proposed changes without modifying any files. |
+| `--no-confirm` | `false` | Apply fixes without asking for confirmation. |
+| `--skip-user-values` | `true` | Skip changes that require a user-defined value to be set. |
+
+## Example: full dry-run-first workflow
+
+```bash
+# Step 1: scan and save results
+kubescape scan ./k8s --format json --output results.json
+
+# Step 2: preview what fix would change
+kubescape fix results.json --dry-run
+
+# Step 3: apply after reviewing
+kubescape fix results.json
+```
+
+<Note>
+  `--skip-user-values` is enabled by default. Some fixes require you to supply a value that Kubescape cannot determine automatically (for example, a specific image name or resource limit). These are skipped unless you disable the flag.
+</Note>
+
+<Tip>
+  Use `--no-confirm` together with `--dry-run` in pull-request checks to surface proposed changes as diff output without touching files.
+</Tip>

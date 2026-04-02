@@ -1,0 +1,191 @@
+---
+title: "MCP server (AI integration)"
+description: "Use the Kubescape MCP server to query your cluster's security posture with AI assistants."
+---
+
+The Kubescape MCP server implements the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/), which lets AI assistants query your cluster's security data using natural language. Once running, you can ask an AI assistant questions like "what vulnerabilities exist in my production namespace?" and get answers grounded in live scan data from your cluster.
+
+The server communicates over stdio, making it compatible with any MCP-enabled AI tool.
+
+## Prerequisites
+
+<Steps>
+  <Step title="Install the Kubescape operator">
+    The MCP server reads data from Custom Resources created by the operator. The operator must be running and have completed at least one scan before the MCP server has data to return.
+
+    ```bash
+    helm repo add kubescape https://kubescape.github.io/helm-charts/
+    helm repo update
+
+    helm upgrade --install kubescape kubescape/kubescape-operator \
+      --namespace kubescape \
+      --create-namespace \
+      --set capabilities.vulnerabilityScan=enable \
+      --set capabilities.configurationScan=enable
+    ```
+
+    Wait for the initial scans to complete:
+
+    ```bash
+    kubectl -n kubescape get vulnerabilitymanifests
+    kubectl -n kubescape get workloadconfigurationscans
+    ```
+  </Step>
+
+  <Step title="Configure kubectl">
+    The MCP server uses your current kubeconfig context. Verify you have access to the cluster:
+
+    ```bash
+    kubectl get nodes
+    ```
+  </Step>
+
+  <Step title="Install Kubescape CLI v3.x or later">
+    ```bash
+    curl -s https://raw.githubusercontent.com/kubescape/kubescape/master/install.sh | /bin/bash
+    ```
+
+    Verify the version:
+
+    ```bash
+    kubescape version
+    ```
+  </Step>
+</Steps>
+
+## Start the MCP server
+
+```bash
+kubescape mcpserver
+```
+
+The server starts and listens on stdio. It remains running until you stop it. Connect your AI assistant to this process using the configuration for your tool (see [Claude Desktop](#claude-desktop) below).
+
+<Note>
+  The MCP server does not expose an HTTP port. It communicates exclusively over stdio, which is how MCP tools launch and communicate with servers.
+</Note>
+
+## Available tools
+
+The MCP server exposes five tools to connected AI assistants:
+
+### Vulnerability tools
+
+| Tool | Parameters | Description |
+|------|------------|-------------|
+| `list_vulnerability_manifests` | `namespace` (optional), `level` (optional: `image`, `workload`, or `both`) | List available vulnerability manifests for images and workloads |
+| `list_vulnerabilities_in_manifest` | `namespace` (optional), `manifest_name` (required) | List all CVEs found in a specific manifest |
+| `list_vulnerability_matches_for_cve` | `namespace` (optional), `manifest_name` (required), `cve_id` (required) | Get details for a specific CVE in a manifest, including affected packages and fix information |
+
+### Configuration tools
+
+| Tool | Parameters | Description |
+|------|------------|-------------|
+| `list_configuration_security_scan_manifests` | `namespace` (optional) | List available configuration scan results at the workload level |
+| `get_configuration_security_scan_manifest` | `namespace` (optional), `manifest_name` (required) | Get detailed configuration scan results for a specific workload, including failed controls and remediation guidance |
+
+<Tip>
+  All `namespace` parameters default to `"kubescape"` if omitted. Pass a specific namespace to filter results to that namespace only, or use the tool without a namespace to see cluster-wide results.
+</Tip>
+
+## Claude Desktop
+
+Add the following to your Claude Desktop configuration file to connect Claude to the Kubescape MCP server:
+
+<CodeGroup>
+
+```json ~/.config/claude/config.json (Linux)
+{
+  "mcpServers": {
+    "kubescape": {
+      "command": "kubescape",
+      "args": ["mcpserver"]
+    }
+  }
+}
+```
+
+```json ~/Library/Application Support/Claude/claude_desktop_config.json (macOS)
+{
+  "mcpServers": {
+    "kubescape": {
+      "command": "kubescape",
+      "args": ["mcpserver"]
+    }
+  }
+}
+```
+
+</CodeGroup>
+
+Restart Claude Desktop after saving the configuration. The Kubescape tools will appear in the tool list when you start a new conversation.
+
+## Example AI queries
+
+Once the server is connected, you can ask your AI assistant:
+
+- "What vulnerabilities exist in my production namespace?"
+- "Show me all critical CVEs affecting my nginx deployments."
+- "Which workloads have the most security issues?"
+- "What configuration problems does my cluster have?"
+- "Give me details about CVE-2023-12345 in my cluster."
+
+The AI assistant will call the appropriate MCP tools, retrieve data from your cluster, and synthesize a response grounded in your actual scan results.
+
+## Security considerations
+
+<Warning>
+  The MCP server runs with the same Kubernetes permissions as your kubeconfig. Any AI assistant connected to the server can read all vulnerability and configuration scan data accessible to that kubeconfig.
+</Warning>
+
+- The server provides **read-only** access. It does not modify cluster resources.
+- No cluster changes are made through the MCP server.
+- In production environments, consider using a dedicated service account with permissions scoped to only the Custom Resources the MCP server needs to read (`vulnerabilitymanifests`, `workloadconfigurationscans`, and related CRDs in the `kubescape` namespace).
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="No vulnerability manifests found">
+    The operator may not have completed its initial scan yet. Check whether manifests exist:
+
+    ```bash
+    kubectl -n kubescape get vulnerabilitymanifests
+    ```
+
+    If the list is empty, check the operator logs:
+
+    ```bash
+    kubectl -n kubescape logs -l app=kubescape
+    ```
+  </Accordion>
+
+  <Accordion title="MCP server not responding">
+    Verify you are running Kubescape v3.x or later:
+
+    ```bash
+    kubescape version
+    ```
+
+    The `mcpserver` subcommand was introduced in v3. Earlier versions do not include it.
+  </Accordion>
+
+  <Accordion title="Connection issues">
+    Verify your kubeconfig is configured correctly and points to the right cluster:
+
+    ```bash
+    kubectl get nodes
+    kubectl config current-context
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## What to do next
+
+<CardGroup cols={2}>
+  <Card title="In-cluster operator" icon="kubernetes" href="/integrations/operator">
+    Install and configure the operator that provides the data the MCP server reads.
+  </Card>
+  <Card title="Architecture" icon="sitemap" href="/reference/architecture">
+    Understand how the MCP server fits into the broader Kubescape architecture.
+  </Card>
+</CardGroup>

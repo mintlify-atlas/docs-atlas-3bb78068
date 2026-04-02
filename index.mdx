@@ -1,97 +1,73 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Kubescape Documentation"
+description: "Open-source Kubernetes security platform for your IDE, CI/CD pipelines, and clusters. Scan for misconfigurations, vulnerabilities, and compliance issues."
 ---
 
-## Setting up
+Kubescape is a CNCF incubating project that provides comprehensive Kubernetes security coverage — from development to runtime. Scan clusters, YAML files, Helm charts, and container images against NSA-CISA, MITRE ATT&CK, and CIS Benchmarks.
 
-Get your documentation site up and running in minutes.
-
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Install Kubescape and run your first security scan in under 5 minutes.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Installation" icon="download" href="/installation">
+    Install via Homebrew, Krew, apt, Scoop, or direct download.
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Scan Your Cluster" icon="shield-check" href="/scanning/cluster">
+    Scan a running Kubernetes cluster for misconfigurations and risks.
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="CLI Reference" icon="terminal" href="/cli/overview">
+    Full reference for every Kubescape command and flag.
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## What Kubescape can do
 
-Everything you need to create world-class documentation.
+<CardGroup cols={2}>
+  <Card title="Misconfiguration Scanning" icon="magnifying-glass" href="/scanning/cluster">
+    Evaluate clusters and manifests against NSA-CISA, MITRE ATT&CK, and CIS Benchmarks with 200+ controls.
+  </Card>
+  <Card title="Image Vulnerability Scanning" icon="bug" href="/scanning/image-scanning">
+    Detect CVEs in container images using Grype — supports public and private registries.
+  </Card>
+  <Card title="Auto-Remediation" icon="wand-magic-sparkles" href="/remediation/auto-fix">
+    Automatically fix misconfigurations in Kubernetes manifest files.
+  </Card>
+  <Card title="Image Patching" icon="bandage" href="/remediation/image-patching">
+    Patch OS-level vulnerabilities in container images using Copacetic and BuildKit.
+  </Card>
+  <Card title="Admission Control" icon="lock" href="/remediation/validating-admission-policies">
+    Enforce security policies with Kubernetes Validating Admission Policies (VAP).
+  </Card>
+  <Card title="In-Cluster Operator" icon="server" href="/integrations/operator">
+    Deploy the Kubescape operator for continuous scanning and runtime security.
+  </Card>
+  <Card title="CI/CD Integration" icon="gear" href="/integrations/cicd">
+    Integrate with GitHub Actions, GitLab CI, and Jenkins pipelines.
+  </Card>
+  <Card title="AI Integration (MCP)" icon="robot" href="/integrations/mcp-server">
+    Query your cluster's security posture using natural language via the MCP server.
+  </Card>
+</CardGroup>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+## Get started in 3 steps
 
-## Need inspiration?
+<Steps>
+  <Step title="Install Kubescape">
+    ```bash
+    curl -s https://raw.githubusercontent.com/kubescape/kubescape/master/install.sh | /bin/bash
+    ```
+  </Step>
+  <Step title="Run your first scan">
+    ```bash
+    kubescape scan
+    ```
+    Kubescape will scan your current cluster and display a security posture overview with compliance scores.
+  </Step>
+  <Step title="Explore results and remediate">
+    Drill into specific controls, scan individual workloads, or use `kubescape fix` to automatically remediate misconfigurations in your manifest files.
+  </Step>
+</Steps>
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+<Note>
+  Kubescape is a [CNCF incubating project](https://www.cncf.io/projects/kubescape/) created by [ARMO](https://www.armosec.io/). It is released under the Apache 2.0 license.
+</Note>

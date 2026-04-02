@@ -1,0 +1,153 @@
+---
+title: "Output formats"
+description: "Export Kubescape scan results as JSON, JUnit XML, SARIF, HTML, PDF, or Prometheus metrics."
+---
+
+Kubescape supports multiple output formats to fit different workflows — interactive review in the terminal, machine-readable output for automation, and report files for sharing or compliance archives.
+
+Use `-f` or `--format` to select a format, and `-o` or `--output` to write results to a file instead of stdout.
+
+## pretty-printer (default)
+
+The default format renders color-coded tables in the terminal, grouped by security category. No flags needed:
+
+```bash
+kubescape scan
+```
+
+To write the pretty-printed output to a file:
+
+```bash
+kubescape scan --format pretty-printer --output report.txt
+```
+
+## JSON
+
+Machine-readable output for programmatic processing, dashboards, or passing results to `kubescape fix`:
+
+```bash
+kubescape scan --format json --output results.json
+```
+
+The JSON report includes full resource details, control results, compliance scores, and severity counters. Use `--format-version v1` for the legacy schema if you have tooling that depends on it.
+
+## JUnit XML
+
+For CI/CD platforms that consume JUnit test reports (GitHub Actions, Jenkins, GitLab CI, Azure DevOps):
+
+```bash
+kubescape scan --format junit --output results.xml
+```
+
+Each failed control maps to a test case failure in the XML, making it easy to surface results in your pipeline's test report view.
+
+## SARIF
+
+[SARIF](https://docs.github.com/en/code-security/code-scanning/integrating-with-code-scanning/sarif-support-for-code-scanning) is the standard format for static analysis tools and is supported by GitHub Code Scanning and Azure DevOps:
+
+```bash
+kubescape scan /path/to/manifests/ --format sarif --output results.sarif
+```
+
+<Warning>
+  SARIF output is supported only when scanning **local files or Git repositories**. It is not available when scanning a running cluster. Attempting to use `--format sarif` on a cluster scan will not produce valid output.
+</Warning>
+
+To upload SARIF results to GitHub Code Scanning, add a step to your GitHub Actions workflow:
+
+```yaml
+- name: Upload SARIF results
+  uses: github/codeql-action/upload-sarif@v3
+  with:
+    sarif_file: results.sarif
+```
+
+## HTML
+
+A self-contained HTML report suitable for sharing with stakeholders:
+
+```bash
+kubescape scan --format html --output report.html
+```
+
+Open the file in any browser — no server required.
+
+## PDF
+
+A printable PDF report for compliance records or audits:
+
+```bash
+kubescape scan --format pdf --output report.pdf
+```
+
+## Prometheus
+
+Expose scan results as Prometheus metrics. This is useful for integrating Kubescape findings into an existing monitoring stack:
+
+```bash
+kubescape scan --format prometheus --output metrics.txt
+```
+
+The output is a text file in Prometheus exposition format that you can scrape or import.
+
+## View types
+
+The `--view` flag controls how results are grouped, regardless of format:
+
+<Tabs>
+  <Tab title="security (default)">
+    Groups results by security category: control plane, access control, secrets, network, and workload.
+
+    ```bash
+    kubescape scan --view security
+    ```
+  </Tab>
+  <Tab title="control">
+    Groups results by individual control ID. Useful when you want to see all resources that failed a particular check.
+
+    ```bash
+    kubescape scan --view control
+    ```
+  </Tab>
+  <Tab title="resource">
+    Groups results by Kubernetes resource. Useful for understanding the full risk profile of a specific workload.
+
+    ```bash
+    kubescape scan --view resource
+    ```
+  </Tab>
+</Tabs>
+
+## Common combinations
+
+<CodeGroup>
+
+```bash JSON for CI/CD artifact
+kubescape scan --format json --output results.json
+```
+
+```bash JUnit for pipeline test reports
+kubescape scan --format junit --output results.xml
+```
+
+```bash SARIF for GitHub Code Scanning
+kubescape scan /path/to/manifests/ --format sarif --output results.sarif
+```
+
+```bash HTML for stakeholder review
+kubescape scan --format html --output report.html
+```
+
+```bash Resource view as JSON
+kubescape scan --format json --view resource --output results.json
+```
+
+</CodeGroup>
+
+## Verbose mode
+
+Add `-v` to any scan to include passing resources in the output, not just failed ones. This works with all formats:
+
+```bash
+kubescape scan -v --format json --output full-results.json
+```

@@ -1,0 +1,81 @@
+---
+title: "Introduction"
+description: "Kubescape is an open-source Kubernetes security platform providing comprehensive coverage from development to runtime — hardening, posture management, and runtime security in one tool."
+---
+
+Kubescape is an open-source Kubernetes security platform that provides comprehensive security coverage across the entire development and deployment lifecycle. It offers misconfiguration scanning, image vulnerability detection, auto-remediation, admission control, and eBPF-based runtime security — all from a single CLI or in-cluster operator.
+
+Kubescape was created by [ARMO](https://www.armosec.io/) and is a [Cloud Native Computing Foundation (CNCF) incubating project](https://www.cncf.io/projects/kubescape/).
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install Kubescape on Linux, macOS, or Windows using a package manager, one-line script, or manual download.
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Run your first cluster scan in under 5 minutes and understand the output.
+  </Card>
+  <Card title="Scan your cluster" icon="shield-check" href="/scanning/cluster">
+    Scan a running Kubernetes cluster against NSA-CISA, MITRE ATT&CK, and CIS Benchmarks.
+  </Card>
+  <Card title="CLI reference" icon="terminal" href="/cli/overview">
+    Full reference for every Kubescape command and flag.
+  </Card>
+</CardGroup>
+
+## What Kubescape does
+
+Kubescape covers the full Kubernetes security lifecycle from a single tool:
+
+| Capability | Description |
+|------------|-------------|
+| **Misconfiguration scanning** | Scan clusters, YAML files, and Helm charts against NSA-CISA, MITRE ATT&CK, and CIS Benchmarks |
+| **Image vulnerability scanning** | Detect CVEs in container images using [Grype](https://github.com/anchore/grype) |
+| **Image patching** | Automatically patch vulnerable images using [Copacetic](https://github.com/project-copacetic/copacetic) |
+| **Auto-remediation** | Automatically fix misconfigurations in Kubernetes manifests |
+| **Admission control** | Enforce security policies with Kubernetes Validating Admission Policies (VAP) |
+| **Runtime security** | eBPF-based runtime monitoring via [Inspektor Gadget](https://github.com/inspektor-gadget) |
+| **AI integration** | MCP server for AI assistant integration |
+
+## How Kubescape fits into your workflow
+
+Kubescape is designed to run wherever you work with Kubernetes:
+
+- **IDE**: Scan YAML files as you write them with the VS Code extension.
+- **CI/CD**: Integrate with GitHub Actions, GitLab CI, or Jenkins to block insecure manifests before they reach production.
+- **CLI**: Run on-demand scans against live clusters or local files from your terminal.
+- **In-cluster operator**: Deploy via Helm for continuous scanning, runtime threat detection, and Prometheus metrics.
+
+## Supported frameworks and controls
+
+Kubescape evaluates your cluster and workloads against industry-standard security frameworks:
+
+- **NSA-CISA Kubernetes Hardening Guidance**
+- **MITRE ATT&CK for Kubernetes**
+- **CIS Kubernetes Benchmark**
+
+Run `kubescape list frameworks` to see all available frameworks, or browse the full control library at [kubescape.io/docs/controls](https://kubescape.io/docs/controls/).
+
+## CNCF status
+
+Kubescape is a [CNCF incubating project](https://www.cncf.io/projects/kubescape/), meaning it has demonstrated production use, a healthy contributor base, and a commitment to open governance. It is released under the [Apache 2.0 license](https://github.com/kubescape/kubescape/blob/master/LICENSE).
+
+<Note>
+  Kubescape follows the [CNCF Code of Conduct](https://github.com/cncf/foundation/blob/master/code-of-conduct.md). Contributions are welcome — see the [Contributing Guide](https://github.com/kubescape/project-governance/blob/main/CONTRIBUTING.md) to get involved.
+</Note>
+
+## Key components
+
+Kubescape is built on well-established open-source components:
+
+- **[Open Policy Agent (OPA)](https://github.com/open-policy-agent/opa)** — Policy evaluation engine
+- **[Regolibrary](https://github.com/kubescape/regolibrary)** — Library of 200+ security controls
+- **[Grype](https://github.com/anchore/grype)** — Image vulnerability scanning
+- **[Copacetic](https://github.com/project-copacetic/copacetic)** — Image patching
+- **[Inspektor Gadget](https://github.com/inspektor-gadget)** — eBPF-based runtime monitoring
+
+## Community
+
+- **[Slack — users](https://cloud-native.slack.com/archives/C04EY3ZF9GE)**: Ask questions and get help.
+- **[Slack — developers](https://cloud-native.slack.com/archives/C04GY6H082K)**: Contribute to development.
+- **[GitHub Issues](https://github.com/kubescape/kubescape/issues)**: Report bugs and request features.
+- **[Roadmap](https://github.com/kubescape/project-governance/blob/main/ROADMAP.md)**: See what's coming next.

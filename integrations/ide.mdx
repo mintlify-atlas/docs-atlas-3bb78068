@@ -1,0 +1,80 @@
+---
+title: "IDE extensions"
+description: "Use Kubescape in VS Code and Lens for real-time security feedback as you write Kubernetes manifests."
+---
+
+Kubescape integrates with your IDE so you can catch security issues in Kubernetes manifests as you write them — before committing to version control, before CI runs, and before anything reaches the cluster. This is the earliest point in the development lifecycle where you can shift security left.
+
+<Note>
+  The VS Code and Lens extensions are separate projects from the Kubescape CLI. They are maintained by ARMO and the community. The CLI itself is the underlying engine both extensions use.
+</Note>
+
+## VS Code
+
+The **Kubescape** extension for VS Code (`kubescape.kubescape`) scans YAML files in your editor as you write them and surfaces security findings inline.
+
+**What it does:**
+
+- Scans Kubernetes YAML files on save and on demand
+- Highlights failing controls directly in the editor with inline diagnostics
+- Shows control descriptions and remediation guidance in the Problems panel
+- Works with single files and multi-document YAML
+
+**Install it:**
+
+Search for `kubescape` in the VS Code Extensions panel, or install it from the Visual Studio Marketplace by searching for the publisher `kubescape`.
+
+<Tip>
+  The extension uses your locally installed Kubescape CLI. If you haven't installed the CLI yet, see the [installation guide](/installation).
+</Tip>
+
+**Supported file types:**
+
+The extension activates on `.yaml` and `.yml` files that contain Kubernetes resource definitions (`kind:` field detected). Non-Kubernetes YAML files are not scanned.
+
+---
+
+## Lens
+
+The **Kubescape Lens extension** adds a Kubescape panel to [Lens](https://k8slens.dev/), the Kubernetes IDE. It lets you view scan results for your connected cluster directly inside Lens without switching to the terminal.
+
+**What it does:**
+
+- Displays configuration scan results for cluster workloads
+- Shows compliance scores per namespace and workload
+- Surfaces vulnerability findings for running images
+- Integrates with the Kubescape operator for live cluster data
+
+**Install it:**
+
+In Lens, open the Extensions panel and search for `kubescape`. The extension connects to the Kubescape operator running in your cluster, so you need the operator installed to see live results.
+
+<Note>
+  The Lens extension is a community project maintained by ARMO. It requires the [Kubescape operator](/integrations/operator) to be installed in your cluster.
+</Note>
+
+---
+
+## Shifting security left
+
+The earlier you catch a misconfiguration, the cheaper it is to fix. Running Kubescape at each stage of development reduces the risk of issues reaching production:
+
+| Stage | Tool | When it runs |
+|-------|------|--------------|
+| Writing manifests | VS Code extension | On save, inline in editor |
+| Pre-commit | CLI (`kubescape scan`) | Before `git push` |
+| Pull request | CI/CD integration | On every PR |
+| In-cluster | Operator | Continuously |
+
+Using the IDE extension alongside the [CI/CD integration](/integrations/cicd) gives you coverage at every stage without duplicating effort — the CLI and the extensions all share the same security controls from the [Regolibrary](https://github.com/kubescape/regolibrary).
+
+## What to do next
+
+<CardGroup cols={2}>
+  <Card title="CI/CD integration" icon="arrows-spin" href="/integrations/cicd">
+    Block insecure manifests in GitHub Actions, GitLab CI, or Jenkins pipelines.
+  </Card>
+  <Card title="In-cluster operator" icon="kubernetes" href="/integrations/operator">
+    Deploy the operator for continuous monitoring of your running cluster.
+  </Card>
+</CardGroup>

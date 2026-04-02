@@ -1,0 +1,148 @@
+---
+title: "Frameworks and controls"
+description: "Scan against specific security frameworks like NSA-CISA, MITRE ATT&CK, and CIS, or target individual controls by ID."
+---
+
+Kubescape organizes its security checks into **controls** — individual checks that test for a specific misconfiguration or risk — and **frameworks**, which are curated sets of controls aligned to a security standard or guideline.
+
+## Available frameworks
+
+<CardGroup cols={2}>
+  <Card title="NSA-CISA" icon="shield">
+    Controls derived from the NSA and CISA Kubernetes Hardening Guidance. Covers hardening of clusters, workloads, and network policies.
+  </Card>
+  <Card title="MITRE ATT&CK" icon="crosshairs">
+    Maps Kubernetes misconfigurations to techniques in the MITRE ATT&CK matrix for containers. Useful for threat-informed defense.
+  </Card>
+  <Card title="CIS Kubernetes Benchmark" icon="list-check">
+    The Center for Internet Security benchmark for Kubernetes. Available for specific Kubernetes versions (e.g., `cis-v1.23-t1.0.1`).
+  </Card>
+  <Card title="SOC 2" icon="building">
+    Controls relevant to SOC 2 Type II audits for Kubernetes environments.
+  </Card>
+  <Card title="PCI-DSS" icon="credit-card">
+    Controls aligned to the Payment Card Industry Data Security Standard.
+  </Card>
+  <Card title="HIPAA" icon="hospital">
+    Controls relevant to HIPAA technical safeguards for Kubernetes environments handling health data.
+  </Card>
+</CardGroup>
+
+## Scanning with a framework
+
+Use `kubescape scan framework <name>` to run only the controls in a given framework.
+
+<CodeGroup>
+
+```bash NSA-CISA
+kubescape scan framework nsa
+```
+
+```bash MITRE ATT&CK
+kubescape scan framework mitre
+```
+
+```bash CIS Benchmark
+kubescape scan framework cis-v1.23-t1.0.1
+```
+
+```bash SOC 2
+kubescape scan framework soc2
+```
+
+```bash PCI-DSS
+kubescape scan framework pci-dss
+```
+
+```bash HIPAA
+kubescape scan framework hipaa
+```
+
+</CodeGroup>
+
+You can scan multiple frameworks at once by separating names with commas:
+
+```bash
+kubescape scan framework nsa,mitre
+```
+
+To scan all available frameworks:
+
+```bash
+kubescape scan framework all
+```
+
+### Scanning files with a framework
+
+Framework scans work with local files and remote repositories too:
+
+```bash
+kubescape scan framework nsa /path/to/manifests/
+kubescape scan framework cis-v1.23-t1.0.1 https://github.com/org/repo
+```
+
+### Limiting to specific namespaces
+
+```bash
+kubescape scan framework mitre --include-namespaces production
+```
+
+## Scanning a specific control
+
+Controls use a `C-XXXX` identifier format. Run a single control with `-v` to see exactly which resources failed and why:
+
+```bash
+kubescape scan control C-0005 -v
+```
+
+To scan a control against local files instead of the live cluster:
+
+```bash
+kubescape scan control C-0013 /path/to/deployment.yaml
+```
+
+### About control IDs
+
+Every control has a unique identifier in the format `C-XXXX` where `XXXX` is a zero-padded number (e.g., `C-0005`, `C-0057`, `C-0260`). These IDs are stable across Kubescape versions. The default scan output shows the suggested command to run for any failed control:
+
+```text
+│ Cluster-admin binding  │  1  │ $ kubescape scan control C-0035 -v │
+```
+
+You can look up any control at `https://kubescape.io/docs/controls/c-XXXX/`.
+
+## Listing available frameworks and controls
+
+Use the `list` command to see what is available in your installed version of Kubescape:
+
+<CodeGroup>
+
+```bash List frameworks
+kubescape list frameworks
+```
+
+```bash List controls
+kubescape list controls
+```
+
+```bash Controls as JSON
+kubescape list controls --format json
+```
+
+</CodeGroup>
+
+The `list` command downloads the latest framework and control definitions from the Kubescape policy registry by default. If you are working offline, download the artifacts first with `kubescape download`.
+
+## Compliance threshold
+
+Set a minimum passing score for a framework scan. The command exits with code `1` if the score falls below the threshold:
+
+```bash
+kubescape scan framework nsa --compliance-threshold 80
+```
+
+The compliance score for a framework is calculated by averaging the per-control compliance scores across all evaluated resources. A control's compliance score is the ratio of passing resources to total resources evaluated for that control.
+
+<Tip>
+  Use `--compliance-threshold` in CI pipelines to gate deployments on a minimum security posture. Pair it with `--format junit` to publish results to your CI platform's test report UI.
+</Tip>

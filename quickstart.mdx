@@ -1,80 +1,177 @@
 ---
 title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+description: "Install Kubescape and run your first Kubernetes security scan in under 5 minutes."
 ---
 
-## Get started in three steps
-
-Get your documentation site running locally and make your first customization.
-
-### Step 1: Set up your local environment
-
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
-
-<CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
-</CardGroup>
+This guide walks you through installing Kubescape and running a full cluster scan. By the end you'll have a security posture overview for your cluster and know how to act on the results.
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  You need `kubectl` configured with access to a running Kubernetes cluster. Kubescape reads your current kubeconfig context.
 </Note>
+
+<Steps>
+  <Step title="Install Kubescape">
+    Run the one-line install script:
+
+    ```bash
+    curl -s https://raw.githubusercontent.com/kubescape/kubescape/master/install.sh | /bin/bash
+    ```
+
+    The script detects your OS and architecture, downloads the latest release, installs it to `~/.kubescape/`, and adds it to your PATH.
+
+    Verify the installation:
+
+    ```bash
+    kubescape version
+    ```
+
+    <Tip>
+      Looking for Homebrew, Windows PowerShell, or other package managers? See the full [installation guide](/installation).
+    </Tip>
+  </Step>
+
+  <Step title="Run your first scan">
+    Scan your current cluster with the default set of frameworks:
+
+    ```bash
+    kubescape scan
+    ```
+
+    Kubescape connects to your cluster via kubeconfig, evaluates all workloads and configurations against NSA-CISA, MITRE ATT&CK, and CIS Benchmark controls, and prints a summary to your terminal.
+  </Step>
+
+  <Step title="Read the output">
+    A typical scan produces output like this:
+
+    ```text
+    Kubescape security posture overview for cluster: minikube
+
+    In this overview, Kubescape shows you a summary of your cluster security posture, including the number of users who can perform administrative actions. For each result greater than 0, you should evaluate its need, and then define an exception to allow it. This baseline can be used to detect drift in future.
+
+    Control plane
+    ╭────┬─────────────────────────────────────┬──────────────────────────────────────────────╮
+    │    │ Control Name                        │ Docs                                         │
+    ├────┼─────────────────────────────────────┼──────────────────────────────────────────────┤
+    │ ✅ │ API server insecure port is enabled │ https://kubescape.io/docs/controls/c-0005/   │
+    │ ❌ │ Anonymous access enabled            │ https://kubescape.io/docs/controls/c-0262/   │
+    │ ❌ │ Audit logs enabled                  │ https://kubescape.io/docs/controls/c-0067/   │
+    │ ✅ │ RBAC enabled                        │ https://kubescape.io/docs/controls/c-0088/   │
+    │ ❌ │ Secret/etcd encryption enabled      │ https://kubescape.io/docs/controls/c-0066/   │
+    ╰────┴─────────────────────────────────────┴──────────────────────────────────────────────╯
+
+    Access control
+    ╭─────────────────────────────────────────────────┬───────────┬────────────────────────────────────╮
+    │ Control Name                                    │ Resources │ View Details                       │
+    ├─────────────────────────────────────────────────┼───────────┼────────────────────────────────────┤
+    │ Cluster-admin binding                           │     1     │ $ kubescape scan control C-0035 -v │
+    │ Data Destruction                                │     6     │ $ kubescape scan control C-0007 -v │
+    │ Exec into container                             │     1     │ $ kubescape scan control C-0002 -v │
+    │ List Kubernetes secrets                         │     6     │ $ kubescape scan control C-0015 -v │
+    │ Minimize access to create pods                  │     2     │ $ kubescape scan control C-0188 -v │
+    │ Minimize wildcard use in Roles and ClusterRoles │     1     │ $ kubescape scan control C-0187 -v │
+    │ Portforwarding privileges                       │     1     │ $ kubescape scan control C-0063 -v │
+    │ Validate admission controller (mutating)        │     0     │ $ kubescape scan control C-0039 -v │
+    │ Validate admission controller (validating)      │     0     │ $ kubescape scan control C-0036 -v │
+    ╰─────────────────────────────────────────────────┴───────────┴────────────────────────────────────╯
+
+    Secrets
+    ╭─────────────────────────────────────────────────┬───────────┬────────────────────────────────────╮
+    │ Control Name                                    │ Resources │ View Details                       │
+    ├─────────────────────────────────────────────────┼───────────┼────────────────────────────────────┤
+    │ Applications credentials in configuration files │     1     │ $ kubescape scan control C-0012 -v │
+    ╰─────────────────────────────────────────────────┴───────────┴────────────────────────────────────╯
+
+    Network
+    ╭────────────────────────┬───────────┬────────────────────────────────────╮
+    │ Control Name           │ Resources │ View Details                       │
+    ├────────────────────────┼───────────┼────────────────────────────────────┤
+    │ Missing network policy │    13     │ $ kubescape scan control C-0260 -v │
+    ╰────────────────────────┴───────────┴────────────────────────────────────╯
+
+    Workload
+    ╭─────────────────────────┬───────────┬────────────────────────────────────╮
+    │ Control Name            │ Resources │ View Details                       │
+    ├─────────────────────────┼───────────┼────────────────────────────────────┤
+    │ Host PID/IPC privileges │     2     │ $ kubescape scan control C-0038 -v │
+    │ HostNetwork access      │     1     │ $ kubescape scan control C-0041 -v │
+    │ HostPath mount          │     1     │ $ kubescape scan control C-0048 -v │
+    │ Non-root containers     │     6     │ $ kubescape scan control C-0013 -v │
+    │ Privileged container    │     1     │ $ kubescape scan control C-0057 -v │
+    ╰─────────────────────────┴───────────┴────────────────────────────────────╯
+
+    Highest-stake workloads
+    ────────────────────────
+    High-stakes workloads are defined as those which Kubescape estimates would have the highest impact if they were to be exploited.
+
+    1. namespace: gadget, name: gadget, kind: DaemonSet
+       '$ kubescape scan workload DaemonSet/gadget --namespace gadget'
+    2. namespace: kafka, name: my-cluster-kafka-0, kind: Pod
+       '$ kubescape scan workload Pod/my-cluster-kafka-0 --namespace kafka'
+    3. namespace: kafka, name: my-cluster-zookeeper-0, kind: Pod
+       '$ kubescape scan workload Pod/my-cluster-zookeeper-0 --namespace kafka'
+
+    Compliance Score
+    ────────────────
+    The compliance score is calculated by multiplying control failures by the number of failures against supported compliance frameworks. Remediate controls, or configure your cluster baseline with exceptions, to improve this score.
+
+    * MITRE: 77.39%
+    * NSA: 69.97%
+
+    View a full compliance report by running '$ kubescape scan framework nsa' or '$ kubescape scan framework mitre'
+
+    What now?
+    ─────────
+    * Run one of the suggested commands to learn more about a failed control failure
+    * Scan a workload with '$ kubescape scan workload' to see vulnerability information
+    * Install Kubescape in your cluster for continuous monitoring and a full vulnerability report: https://github.com/kubescape/helm-charts/tree/main/charts/kubescape-operator
+    ```
+  </Step>
+
+  <Step title="Understand the output">
+    The scan output is divided into sections:
+
+    **Control plane** shows the security posture of your Kubernetes API server and core cluster configuration. A checkmark (✅) means the control passed; a cross (❌) means it failed. Each failed control links to documentation with remediation steps.
+
+    **Access control** lists RBAC-related controls and the number of resources that failed each one. The `Resources` column tells you how many objects are affected. Use the `View Details` command to drill in:
+
+    ```bash
+    kubescape scan control C-0035 -v
+    ```
+
+    **Secrets** highlights workloads or configurations that may be exposing credentials insecurely.
+
+    **Network** reports workloads without network policies, which are a key isolation control.
+
+    **Workload** covers pod-level security settings such as privileged containers, host PID/IPC access, and whether containers run as root.
+
+    **Highest-stake workloads** identifies the workloads that would have the greatest blast radius if compromised. Scan them individually for a detailed vulnerability report:
+
+    ```bash
+    kubescape scan workload DaemonSet/gadget --namespace gadget
+    ```
+
+    **Compliance score** shows the percentage of controls that passed for each framework. A higher score means better compliance. Run a framework-specific scan to get the full report:
+
+    ```bash
+    kubescape scan framework nsa
+    kubescape scan framework mitre
+    ```
+  </Step>
+</Steps>
+
+## What to do next
+
+<CardGroup cols={2}>
+  <Card title="Scan clusters" icon="shield-check" href="/scanning/cluster">
+    Learn all the options for scanning a running cluster, including namespace filtering and kubeconfig selection.
+  </Card>
+  <Card title="Scan files and repos" icon="file-code" href="/scanning/files-and-repos">
+    Scan local YAML files, Helm charts, Kustomize directories, and Git repositories.
+  </Card>
+  <Card title="Scan images" icon="bug" href="/scanning/image-scanning">
+    Detect CVEs in container images from public or private registries.
+  </Card>
+  <Card title="Auto-fix misconfigurations" icon="wand-magic-sparkles" href="/remediation/auto-fix">
+    Use `kubescape fix` to automatically remediate misconfigurations in manifest files.
+  </Card>
+</CardGroup>

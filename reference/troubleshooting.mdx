@@ -1,0 +1,520 @@
+---
+title: "Troubleshooting"
+description: "Solutions for common installation, scanning, image scanning, patching, operator, MCP server, and output issues."
+---
+
+<Tip>
+Before opening a support request, enable debug logging to capture detailed output:
+
+```bash
+kubescape scan -l debug 2>&1 | tee debug.log
+```
+</Tip>
+
+---
+
+## Installation issues
+
+<AccordionGroup>
+  <Accordion title="Command not found after installation">
+    **Symptom:** After running the install script, `kubescape` is not found.
+
+    **Solution:**
+
+    1. Verify the binary was installed:
+
+       ```bash
+       ls -la ~/.kubescape/kubescape
+       ```
+
+    2. Add the install directory to your PATH:
+
+       ```bash
+       # For bash
+       echo 'export PATH=$PATH:~/.kubescape' >> ~/.bashrc
+       source ~/.bashrc
+
+       # For zsh
+       echo 'export PATH=$PATH:~/.kubescape' >> ~/.zshrc
+       source ~/.zshrc
+       ```
+
+    3. Alternatively, move the binary to a directory already in your PATH:
+
+       ```bash
+       sudo mv ~/.kubescape/kubescape /usr/local/bin/
+       ```
+  </Accordion>
+
+  <Accordion title="Permission denied during installation">
+    **Symptom:** Installation fails with permission errors.
+
+    **Solution:**
+
+    ```bash
+    # Create the directory with correct permissions
+    mkdir -p ~/.kubescape
+    chmod 755 ~/.kubescape
+
+    # Re-run the installation
+    curl -s https://raw.githubusercontent.com/kubescape/kubescape/master/install.sh | /bin/bash
+    ```
+  </Accordion>
+
+  <Accordion title="PowerShell execution policy error on Windows">
+    **Symptom:** The PowerShell install script fails to execute.
+
+    **Solution:**
+
+    1. Check your PowerShell version (v5.0+ required):
+
+       ```powershell
+       $PSVersionTable.PSVersion
+       ```
+
+    2. Set the execution policy:
+
+       ```powershell
+       Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+       ```
+
+    3. Retry the installation:
+
+       ```powershell
+       iwr -useb https://raw.githubusercontent.com/kubescape/kubescape/master/install.ps1 | iex
+       ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Scanning issues
+
+<AccordionGroup>
+  <Accordion title="Cannot connect to cluster">
+    **Symptom:** `kubescape scan` fails with connection errors.
+
+    **Solutions:**
+
+    1. Verify `kubectl` connectivity:
+
+       ```bash
+       kubectl get nodes
+       ```
+
+    2. Check your kubeconfig:
+
+       ```bash
+       kubectl config current-context
+       kubectl config view
+       ```
+
+    3. Pass an explicit kubeconfig:
+
+       ```bash
+       kubescape scan --kubeconfig /path/to/kubeconfig
+       ```
+
+    4. Use a specific context:
+
+       ```bash
+       kubescape scan --kube-context my-context
+       ```
+  </Accordion>
+
+  <Accordion title="Scan times out or is very slow">
+    **Symptom:** Scanning large clusters takes too long or times out.
+
+    **Solutions:**
+
+    1. Restrict the scan to specific namespaces:
+
+       ```bash
+       kubescape scan --include-namespaces production,staging
+       ```
+
+    2. Exclude non-essential namespaces:
+
+       ```bash
+       kubescape scan --exclude-namespaces kube-system,kube-public,monitoring
+       ```
+
+    3. Scan a single framework instead of all:
+
+       ```bash
+       kubescape scan framework nsa
+       ```
+
+    4. For large clusters, consider deploying the operator for continuous scanning instead of ad-hoc CLI scans.
+  </Accordion>
+
+  <Accordion title="No results returned">
+    **Symptom:** Scan completes but shows no results.
+
+    **Solutions:**
+
+    1. Verify the cluster has workloads:
+
+       ```bash
+       kubectl get pods --all-namespaces
+       ```
+
+    2. Run with verbose output to see what is being evaluated:
+
+       ```bash
+       kubescape scan -v
+       ```
+
+    3. Check that namespace filters are not excluding all resources:
+
+       ```bash
+       kubescape scan --include-namespaces default
+       ```
+  </Accordion>
+
+  <Accordion title="Framework or control not found">
+    **Symptom:** Error about an unknown framework or control name.
+
+    **Solutions:**
+
+    1. List available frameworks and controls:
+
+       ```bash
+       kubescape list frameworks
+       kubescape list controls
+       ```
+
+    2. Download the latest artifacts to refresh the local cache:
+
+       ```bash
+       kubescape download artifacts
+       ```
+  </Accordion>
+
+  <Accordion title="RBAC permission errors during scan">
+    **Symptom:** Scan fails with permission denied errors from the Kubernetes API.
+
+    **Solution:**
+
+    Ensure the kubeconfig user has read access to the following resource types:
+
+    - `Deployments`, `DaemonSets`, `StatefulSets`, `Jobs`, `CronJobs`
+    - `Pods`, `Services`, `ConfigMaps`, `Secrets`
+    - `Roles`, `RoleBindings`, `ClusterRoles`, `ClusterRoleBindings`
+    - `NetworkPolicies`
+    - `ServiceAccounts`
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Image scanning issues
+
+<AccordionGroup>
+  <Accordion title="Image not found">
+    **Symptom:** `kubescape scan image` fails because the image cannot be pulled.
+
+    **Solutions:**
+
+    1. Use a fully-qualified image reference:
+
+       ```bash
+       kubescape scan image docker.io/library/nginx:1.21
+       ```
+
+    2. Check whether the image exists locally:
+
+       ```bash
+       docker images | grep myimage
+       ```
+
+    3. For private registries, provide credentials:
+
+       ```bash
+       kubescape scan image myregistry.io/myimage:tag \
+         --username myuser \
+         --password mypassword
+       ```
+  </Accordion>
+
+  <Accordion title="Authentication failed for private registry">
+    **Symptom:** Scan fails with authentication errors when pulling a private image.
+
+    **Solutions:**
+
+    1. Verify your credentials work with Docker directly:
+
+       ```bash
+       docker login myregistry.io
+       docker pull myregistry.io/myimage:tag
+       ```
+
+    2. Pass credentials via environment variables:
+
+       ```bash
+       export KUBESCAPE_REGISTRY_USERNAME=myuser
+       export KUBESCAPE_REGISTRY_PASSWORD=mypassword
+       kubescape scan image myregistry.io/myimage:tag
+       ```
+  </Accordion>
+
+  <Accordion title="Known CVEs are not being detected">
+    **Symptom:** Vulnerability database appears outdated; known CVEs are not flagged.
+
+    **Solution:**
+
+    The vulnerability database is updated automatically on each scan when a network connection is available. To force a refresh, clear the cached database and run a new scan:
+
+    ```bash
+    rm -rf ~/.kubescape/grype-db
+    kubescape scan image nginx:latest
+    ```
+
+    For air-gapped environments, see [Offline mode](/reference/offline-mode).
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Image patching issues
+
+<AccordionGroup>
+  <Accordion title="BuildKit not running">
+    **Symptom:** `kubescape patch` fails with BuildKit connection errors.
+
+    **Solutions:**
+
+    1. Start BuildKit directly:
+
+       ```bash
+       sudo buildkitd &
+       ```
+
+    2. Or run BuildKit in a Docker container (no sudo required):
+
+       ```bash
+       docker run --detach --rm --privileged \
+         -p 127.0.0.1:8888:8888/tcp \
+         --name buildkitd \
+         --entrypoint buildkitd \
+         moby/buildkit:latest \
+         --addr tcp://0.0.0.0:8888
+
+       kubescape patch -i nginx:1.22 -a tcp://0.0.0.0:8888
+       ```
+
+    3. Verify the BuildKit socket exists:
+
+       ```bash
+       ls -la /run/buildkit/buildkitd.sock
+       ```
+  </Accordion>
+
+  <Accordion title="No fixes available">
+    **Symptom:** The patch command reports no patches are available.
+
+    **Explanation:** Image patching only fixes OS-level vulnerabilities that have available upstream patches. Application-level vulnerabilities and those marked "wont-fix" cannot be patched this way.
+
+    **What to do:**
+
+    1. Review the vulnerability report for the image:
+
+       ```bash
+       kubescape scan image myimage:tag -v
+       ```
+
+    2. Look for vulnerabilities with fix versions available. Those marked as "wont-fix" cannot be patched.
+
+    3. Consider updating to a newer base image version.
+  </Accordion>
+
+  <Accordion title="Permission denied during patching">
+    **Symptom:** Patching fails with permission errors when using the default Unix socket.
+
+    **Solution:**
+
+    Run with `sudo` when using the default BuildKit socket:
+
+    ```bash
+    sudo kubescape patch --image nginx:1.22
+    ```
+
+    Or use the Docker-based BuildKit approach, which does not require elevated privileges.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Operator issues
+
+<AccordionGroup>
+  <Accordion title="Operator not responding to CLI commands">
+    **Symptom:** `kubescape operator scan` hangs or fails.
+
+    **Solutions:**
+
+    1. Verify the operator pods are running:
+
+       ```bash
+       kubectl -n kubescape get pods
+       ```
+
+    2. Check operator logs for errors:
+
+       ```bash
+       kubectl -n kubescape logs -l app=kubescape-operator
+       ```
+
+    3. Verify the operator service is present:
+
+       ```bash
+       kubectl -n kubescape get svc
+       ```
+  </Accordion>
+
+  <Accordion title="No VulnerabilityManifest resources in cluster">
+    **Symptom:** No `VulnerabilityManifest` Custom Resources are found after the operator has been running.
+
+    **Solutions:**
+
+    1. Confirm vulnerability scanning is enabled in the operator config:
+
+       ```bash
+       kubectl -n kubescape get configmap kubescape-config -o yaml
+       ```
+
+    2. Verify `kubevuln` is running:
+
+       ```bash
+       kubectl -n kubescape get pods -l app=kubevuln
+       ```
+
+    3. Check `kubevuln` logs for errors:
+
+       ```bash
+       kubectl -n kubescape logs -l app=kubevuln
+       ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## MCP server issues
+
+<AccordionGroup>
+  <Accordion title="MCP server fails to start">
+    **Symptom:** `kubescape mcpserver` exits with errors immediately.
+
+    **Solutions:**
+
+    1. Verify `kubectl` can reach the cluster:
+
+       ```bash
+       kubectl get nodes
+       ```
+
+    2. Check that the Kubescape operator CRDs are installed:
+
+       ```bash
+       kubectl get crd vulnerabilitymanifests.spdx.softwarecomposition.kubescape.io
+       kubectl get crd workloadconfigurationscans.spdx.softwarecomposition.kubescape.io
+       ```
+
+    3. If CRDs are missing, install the operator:
+
+       ```bash
+       helm repo add kubescape https://kubescape.github.io/helm-charts/
+       helm upgrade --install kubescape kubescape/kubescape-operator \
+         --namespace kubescape --create-namespace
+       ```
+  </Accordion>
+
+  <Accordion title="AI assistant cannot connect to the MCP server">
+    **Symptom:** Your AI tool reports connection failures to the Kubescape MCP server.
+
+    **Solutions:**
+
+    1. Confirm `kubescape` is in your PATH:
+
+       ```bash
+       which kubescape
+       ```
+
+    2. Verify the MCP server starts without error when run manually:
+
+       ```bash
+       kubescape mcpserver
+       ```
+
+    3. Check your AI tool's MCP configuration. For Claude Desktop:
+
+       ```json
+       {
+         "mcpServers": {
+           "kubescape": {
+             "command": "kubescape",
+             "args": ["mcpserver"]
+           }
+         }
+       }
+       ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Output issues
+
+<AccordionGroup>
+  <Accordion title="SARIF format not working">
+    **Symptom:** SARIF output fails or produces an error.
+
+    **Note:** SARIF format is only supported when scanning local files or Git repositories. It is **not** supported for live cluster scans.
+
+    ```bash
+    # This works — scanning local files
+    kubescape scan /path/to/manifests --format sarif --output results.sarif
+
+    # This does NOT work — cluster scan
+    kubescape scan --format sarif --output results.sarif
+    ```
+  </Accordion>
+
+  <Accordion title="JSON output is malformed or mixed with console output">
+    **Symptom:** The JSON output file cannot be parsed.
+
+    **Solution:**
+
+    Always use `--output` to write JSON to a file rather than stdout, which may mix with log messages:
+
+    ```bash
+    kubescape scan --format json --output results.json
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Getting help
+
+If the steps above do not resolve your issue:
+
+1. **Run with debug logging** and capture the output:
+
+   ```bash
+   kubescape scan -l debug 2>&1 | tee debug.log
+   ```
+
+2. **Search existing issues** on GitHub:
+   [https://github.com/kubescape/kubescape/issues](https://github.com/kubescape/kubescape/issues)
+
+3. **Ask in the community Slack:**
+   - [Users channel](https://cloud-native.slack.com/archives/C04EY3ZF9GE) — questions and help
+   - [Developers channel](https://cloud-native.slack.com/archives/C04GY6H082K) — contributing and development
+
+4. **Open a new issue** and include:
+   - Kubescape version: `kubescape version`
+   - Kubernetes version: `kubectl version`
+   - Full error message
+   - Steps to reproduce
+   - Debug log output

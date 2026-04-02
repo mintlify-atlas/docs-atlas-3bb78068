@@ -1,0 +1,87 @@
+---
+title: "kubescape patch"
+description: "Patch container images to remediate OS-level vulnerabilities using BuildKit and Copa."
+keywords: ["kubescape patch", "image patching", "vulnerabilities", "buildkit", "copa", "container image", "OS vulnerabilities"]
+---
+
+## Synopsis
+
+```bash
+kubescape patch --image <image>:<tag> [flags]
+```
+
+<Note>
+`kubescape patch` only remediates **OS-level vulnerabilities**. Application-level vulnerabilities must be addressed by the application's developers. Windows containers are not supported.
+</Note>
+
+## Prerequisites
+
+- [BuildKit](https://github.com/moby/buildkit) daemon must be installed and reachable.
+- The image must be in canonical form (e.g., `docker.io/library/nginx:1.22`).
+
+## Flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `-i, --image <image>` | Image name and tag to patch (required) | — |
+| `-t, --tag <tag>` | Tag for the patched image | `<original-tag>-patched` |
+| `-a, --address <addr>` | BuildKit daemon address | `unix:///run/buildkit/buildkitd.sock` |
+| `--timeout <duration>` | Timeout for the patching operation | `5m` |
+| `--ignore-errors` | Continue if errors occur during patching | `false` |
+| `-u, --username <user>` | Registry username | — |
+| `-p, --password <pass>` | Registry password | — |
+| `-f, --format <format>` | Output format: `pretty-printer`, `json`, `sarif` | — |
+| `-o, --output <path>` | Write output to a file instead of stdout | stdout |
+| `-v, --verbose` | Display full vulnerability report | `false` |
+| `--grype-db-url <url>` | Grype vulnerability database URL (for offline scanning) | — |
+| `-s, --severity-threshold <sev>` | Exit 1 if any finding is at or above this severity | — |
+| `--use-default-matchers` | Use default matchers (`true`) or CPE matchers (`false`) | `true` |
+
+## Examples
+
+### With sudo privileges
+
+Start `buildkitd` in a separate terminal, then run the patch command:
+
+```bash
+# Terminal 1 — start the BuildKit daemon
+sudo buildkitd
+
+# Terminal 2 — patch the image
+sudo kubescape patch --image docker.io/library/nginx:1.22
+```
+
+To write the patched image with a custom tag:
+
+```bash
+sudo kubescape patch --image docker.io/library/nginx:1.22 --tag nginx:1.22-fixed
+```
+
+### Without sudo privileges (Docker-based BuildKit)
+
+Run `buildkitd` as a Docker container and point Kubescape at its TCP address:
+
+```bash
+export BUILDKIT_VERSION=v0.11.4
+export BUILDKIT_PORT=8888
+
+docker run \
+    --detach \
+    --rm \
+    --privileged \
+    -p 127.0.0.1:$BUILDKIT_PORT:$BUILDKIT_PORT/tcp \
+    --name buildkitd \
+    --entrypoint buildkitd \
+    "moby/buildkit:$BUILDKIT_VERSION" \
+    --addr tcp://0.0.0.0:$BUILDKIT_PORT
+
+kubescape patch \
+    --image docker.io/library/nginx:1.22 \
+    --address tcp://0.0.0.0:$BUILDKIT_PORT
+```
+
+### Verbose output
+
+```bash
+sudo kubescape patch --image docker.io/library/nginx:1.22 --verbose
+```

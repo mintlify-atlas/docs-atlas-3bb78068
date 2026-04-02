@@ -1,0 +1,58 @@
+---
+title: "kubescape mcpserver"
+description: "Start the Kubescape MCP server for AI assistant integration via stdio."
+keywords: ["kubescape mcpserver", "MCP", "model context protocol", "AI assistant", "Claude", "stdio"]
+---
+
+## Synopsis
+
+```bash
+kubescape mcpserver
+```
+
+## Description
+
+`kubescape mcpserver` starts a [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that exposes Kubescape security data to AI assistants. The server communicates over **stdio**, making it straightforward to integrate with any MCP-compatible client.
+
+## Prerequisites
+
+- The [Kubescape operator](https://github.com/kubescape/helm-charts/tree/main/charts/kubescape-operator) must be installed in your cluster.
+- `kubectl` must be configured with access to that cluster.
+
+## Claude Desktop configuration
+
+Add the following to your Claude Desktop `claude_desktop_config.json` to connect it to Kubescape:
+
+```json
+{
+  "mcpServers": {
+    "kubescape": {
+      "command": "kubescape",
+      "args": ["mcpserver"]
+    }
+  }
+}
+```
+
+## Available MCP tools
+
+The MCP server exposes the following tools to the AI assistant:
+
+| Tool | Description |
+|------|-------------|
+| `list_vulnerability_manifests` | Discover vulnerability manifests at image and workload levels |
+| `list_vulnerabilities_in_manifest` | List all vulnerabilities in a specific manifest |
+| `list_vulnerability_matches_for_cve` | List all matches for a specific CVE in a manifest |
+| `list_configuration_security_scan_manifests` | Discover configuration security scan results at workload level |
+| `get_configuration_security_scan_manifest` | Get details of a specific configuration scan result |
+
+## Examples
+
+```bash
+# Start the MCP server
+kubescape mcpserver
+```
+
+<Note>
+The server connects to the Kubescape operator's storage backend in the cluster. Ensure the operator is running and `kubectl` is pointed at the correct cluster before starting the server.
+</Note>

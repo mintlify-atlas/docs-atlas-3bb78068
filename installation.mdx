@@ -1,0 +1,278 @@
+---
+title: "Installation"
+description: "Install Kubescape on Linux, macOS, or Windows using a one-line script, package manager, or manual download."
+---
+
+## Quick install
+
+<Tabs>
+  <Tab title="Linux / macOS">
+    ```bash
+    curl -s https://raw.githubusercontent.com/kubescape/kubescape/master/install.sh | /bin/bash
+    ```
+
+    The script:
+    - Detects your OS and architecture (x86\_64, ARM64/M1/M2)
+    - Downloads the latest release from GitHub
+    - Installs to `~/.kubescape/`
+    - Adds Kubescape to your PATH
+
+    <Note>
+      This is a security product. Read the [install script](https://raw.githubusercontent.com/kubescape/kubescape/master/install.sh) before running it.
+    </Note>
+  </Tab>
+  <Tab title="Windows (PowerShell)">
+    Requires PowerShell v5.0 or higher:
+
+    ```powershell
+    iwr -useb https://raw.githubusercontent.com/kubescape/kubescape/master/install.ps1 | iex
+    ```
+
+    If you see an execution policy error, run this first:
+
+    ```powershell
+    Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+    ```
+  </Tab>
+</Tabs>
+
+### Install a specific version
+
+```bash
+curl -s https://raw.githubusercontent.com/kubescape/kubescape/master/install.sh | /bin/bash -s -- -v v3.0.0
+```
+
+---
+
+## Package managers
+
+<Tabs>
+  <Tab title="Homebrew">
+    Install on macOS or Linux:
+
+    ```bash
+    brew install kubescape
+    ```
+
+    <Note>
+      The [official Homebrew formula](https://formulae.brew.sh/formula/kubescape#default) has git scanning disabled. For full functionality, use the Kubescape tap instead:
+
+      ```bash
+      brew tap kubescape/tap
+      brew install kubescape-cli
+      ```
+    </Note>
+  </Tab>
+  <Tab title="Krew">
+    Install as a `kubectl` plugin using [Krew](https://krew.sigs.k8s.io/):
+
+    ```bash
+    kubectl krew update
+    kubectl krew install kubescape
+    ```
+
+    After installing, use Kubescape as a kubectl plugin:
+
+    ```bash
+    kubectl kubescape scan
+    ```
+  </Tab>
+  <Tab title="apt (Ubuntu / Debian)">
+    ```bash
+    sudo add-apt-repository ppa:kubescape/kubescape
+    sudo apt update
+    sudo apt install kubescape
+    ```
+
+    For other Debian-based or RPM-based distributions, see the [OpenSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Akubescape&package=kubescape).
+  </Tab>
+  <Tab title="Arch Linux">
+    Install from the AUR using `yay`:
+
+    ```bash
+    # Build from source
+    yay -S kubescape
+
+    # Or install pre-built binary (faster)
+    yay -S kubescape-bin
+    ```
+
+    <Note>AUR packages are community-supported.</Note>
+  </Tab>
+  <Tab title="NixOS / Nix">
+    <CodeGroup>
+
+    ```bash Ephemeral shell
+    nix-shell -p kubescape
+    ```
+
+    ```nix configuration.nix
+    environment.systemPackages = with pkgs; [ kubescape ];
+    ```
+
+    ```nix home-manager
+    home.packages = with pkgs; [ kubescape ];
+    ```
+
+    </CodeGroup>
+
+    <Note>NixOS packages are community-supported.</Note>
+  </Tab>
+  <Tab title="openSUSE">
+    ```bash
+    sudo zypper refresh
+    sudo zypper install kubescape
+    ```
+
+    <Note>Community-supported.</Note>
+  </Tab>
+  <Tab title="Snap">
+    ```bash
+    sudo snap install kubescape
+    ```
+  </Tab>
+  <Tab title="Chocolatey (Windows)">
+    ```powershell
+    choco install kubescape
+    ```
+
+    <Note>
+      [Community-supported](https://community.chocolatey.org/packages/kubescape).
+    </Note>
+  </Tab>
+  <Tab title="Scoop (Windows)">
+    ```powershell
+    scoop install kubescape
+    ```
+
+    <Note>
+      [Community-supported](https://scoop.sh/#/apps?q=kubescape).
+    </Note>
+  </Tab>
+</Tabs>
+
+---
+
+## Manual installation
+
+### Download from GitHub releases
+
+1. Go to the [releases page](https://github.com/kubescape/kubescape/releases).
+2. Download the binary for your OS and architecture.
+3. Make it executable and move it to your PATH:
+
+```bash
+chmod +x kubescape
+sudo mv kubescape /usr/local/bin/
+```
+
+### Build from source
+
+Requires Go to be installed.
+
+```bash
+git clone https://github.com/kubescape/kubescape.git
+cd kubescape
+make build
+```
+
+---
+
+## Verification
+
+After installing, confirm Kubescape is working:
+
+```bash
+kubescape version
+```
+
+To verify end-to-end with a real scan, run against a sample manifest:
+
+```bash
+kubescape scan https://raw.githubusercontent.com/kubernetes/examples/master/guestbook/all-in-one/guestbook-all-in-one.yaml
+```
+
+<Tip>
+  If `kubescape` is not found after installing with the curl script, reload your shell or add `~/.kubescape` to your PATH manually:
+
+  ```bash
+  export PATH="$HOME/.kubescape:$PATH"
+  ```
+</Tip>
+
+---
+
+## Updating
+
+<Tabs>
+  <Tab title="Script install">
+    Re-run the install script to get the latest version:
+
+    ```bash
+    curl -s https://raw.githubusercontent.com/kubescape/kubescape/master/install.sh | /bin/bash
+    ```
+  </Tab>
+  <Tab title="Homebrew">
+    ```bash
+    brew upgrade kubescape
+    ```
+  </Tab>
+  <Tab title="apt">
+    ```bash
+    sudo apt update && sudo apt upgrade kubescape
+    ```
+  </Tab>
+  <Tab title="Krew">
+    ```bash
+    kubectl krew upgrade kubescape
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Uninstalling
+
+<Tabs>
+  <Tab title="Script install">
+    ```bash
+    rm -rf ~/.kubescape
+    ```
+
+    Then remove the PATH entry from your shell config (`.bashrc`, `.zshrc`, etc.).
+  </Tab>
+  <Tab title="Homebrew">
+    ```bash
+    brew uninstall kubescape
+    ```
+  </Tab>
+  <Tab title="apt">
+    ```bash
+    sudo apt remove kubescape
+    ```
+  </Tab>
+  <Tab title="Krew">
+    ```bash
+    kubectl krew uninstall kubescape
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Run your first scan and understand the output.
+  </Card>
+  <Card title="Scan your cluster" icon="shield-check" href="/scanning/cluster">
+    Learn all the options for scanning a running cluster.
+  </Card>
+  <Card title="CLI reference" icon="terminal" href="/cli/overview">
+    Full reference for every Kubescape command and flag.
+  </Card>
+  <Card title="Troubleshooting" icon="circle-question" href="/reference/troubleshooting">
+    Common issues and how to resolve them.
+  </Card>
+</CardGroup>

@@ -1,0 +1,187 @@
+---
+title: "kubescape scan"
+description: "Scan Kubernetes clusters, manifest files, or container images for misconfigurations and vulnerabilities."
+keywords: ["kubescape scan", "kubernetes security scan", "misconfiguration", "vulnerability", "framework", "control", "workload", "image scan"]
+---
+
+## Synopsis
+
+```bash
+kubescape scan [target] [flags]
+```
+
+## Target types
+
+| Target | What is scanned |
+|--------|-----------------|
+| _(none)_ | The current Kubernetes cluster (uses the active kubeconfig context) |
+| `<path>` | Local YAML files, Helm charts, or Kustomize directories |
+| `<url>` | A remote Git repository |
+
+## Flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--account <id>` | Kubescape SaaS account ID | from cache |
+| `--access-key <key>` | Kubescape SaaS access key | from cache |
+| `--cluster-name <name>` | Custom cluster name (distinct from `--kube-context`) | — |
+| `--compliance-threshold <float>` | Exit 1 if compliance score falls below this percentage | `0` |
+| `--controls-config <path>` | Path to a controls-configuration file | — |
+| `-e, --exclude-namespaces <ns>` | Namespaces to exclude, comma-separated | — |
+| `--exceptions <path>` | Path to an exceptions file | — |
+| `-f, --format <format>` | Output format: `pretty-printer`, `json`, `junit`, `prometheus`, `pdf`, `html`, `sarif` | `pretty-printer` |
+| `--include-namespaces <ns>` | Namespaces to include, comma-separated | — |
+| `--keep-local` | Do not report results to the configured backend | `false` |
+| `--kubeconfig <path>` | Path to kubeconfig file | — |
+| `--labels-to-copy <labels>` | Labels to copy from workloads to scan reports, comma-separated | — |
+| `-o, --output <path>` | Write output to a file instead of stdout | stdout |
+| `--scan-images` | Also scan container images for vulnerabilities | `false` |
+| `--severity-threshold <sev>` | Exit 1 if any finding is at or above this severity: `low`, `medium`, `high`, `critical` | — |
+| `--submit` | Submit results to Kubescape SaaS | `false` |
+| `--grype-db-url <url>` | Grype vulnerability database URL (for offline image scanning) | — |
+| `--use-artifacts-from <path>` | Load policy artifacts from a local directory (offline mode) | — |
+| `--use-from <paths>` | Load specific policy objects from local paths (comma-separated or repeated) | — |
+| `-v, --verbose` | Show all resources, not only failed ones | `false` |
+| `--view <type>` | Results view: `security`, `control`, `resource` | `security` |
+
+## Examples
+
+```bash
+# Scan the current cluster
+kubescape scan
+
+# Scan local manifest files
+kubescape scan /path/to/manifests/
+
+# Scan a Git repository
+kubescape scan https://github.com/org/repo
+
+# Save results as JSON
+kubescape scan --format json --output results.json
+
+# Fail if compliance score drops below 80%
+kubescape scan --compliance-threshold 80
+
+# Exclude system namespaces
+kubescape scan --exclude-namespaces kube-system,kube-public
+
+# Display all resources, including passing ones
+kubescape scan --verbose
+```
+
+---
+
+## kubescape scan framework
+
+Scan against a specific security framework.
+
+### Synopsis
+
+```bash
+kubescape scan framework <framework-name> [target] [flags]
+```
+
+### Available frameworks
+
+| Framework | Description |
+|-----------|-------------|
+| `nsa` | NSA-CISA Kubernetes Hardening Guidance |
+| `mitre` | MITRE ATT&CK® for Kubernetes |
+| `cis-v1.23-t1.0.1` | CIS Kubernetes Benchmark |
+| `soc2` | SOC 2 compliance |
+| `pci-dss` | PCI DSS compliance |
+| `hipaa` | HIPAA compliance |
+
+### Examples
+
+```bash
+# Scan using the NSA framework
+kubescape scan framework nsa
+
+# Scan a specific namespace with MITRE
+kubescape scan framework mitre --include-namespaces production
+
+# Scan local manifests against the CIS benchmark
+kubescape scan framework cis-v1.23-t1.0.1 /path/to/manifests
+```
+
+---
+
+## kubescape scan control
+
+Scan against a single security control.
+
+### Synopsis
+
+```bash
+kubescape scan control <control-id> [target] [flags]
+```
+
+### Examples
+
+```bash
+# Scan for privileged containers (verbose)
+kubescape scan control C-0057 -v
+
+# Scan a specific file for a control
+kubescape scan control C-0013 /path/to/deployment.yaml
+```
+
+---
+
+## kubescape scan workload
+
+Scan a specific workload in the cluster.
+
+### Synopsis
+
+```bash
+kubescape scan workload <kind>/<name> [flags]
+```
+
+### Flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--namespace <ns>` | Namespace of the workload | — |
+
+### Examples
+
+```bash
+kubescape scan workload Deployment/nginx --namespace default
+kubescape scan workload DaemonSet/fluentd --namespace logging
+```
+
+---
+
+## kubescape scan image
+
+Scan a container image for vulnerabilities.
+
+### Synopsis
+
+```bash
+kubescape scan image <image>:<tag> [flags]
+```
+
+### Flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--exceptions <path>` | Path to an exceptions file | — |
+| `-p, --password <pass>` | Registry password | — |
+| `-u, --username <user>` | Registry username | — |
+| `--use-default-matchers` | Use default vulnerability matchers (`true`) or CPE matchers (`false`) | `true` |
+
+### Examples
+
+```bash
+# Scan a public image
+kubescape scan image nginx:1.21
+
+# Scan with verbose output
+kubescape scan image nginx:1.21 -v
+
+# Scan an image from a private registry
+kubescape scan image myregistry.io/myimage:tag -u myuser -p mypass
+```

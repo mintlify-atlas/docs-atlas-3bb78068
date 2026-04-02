@@ -1,0 +1,148 @@
+---
+title: "Configuration"
+description: "Environment variables, config subcommands, global CLI flags, log levels, and exit codes for Kubescape."
+---
+
+Kubescape stores its configuration and cached artifacts in a local cache directory and supports configuration via CLI flags, environment variables, and the `kubescape config` subcommands.
+
+---
+
+## Cache directory
+
+By default, Kubescape uses `~/.kubescape` as its cache directory. This is where downloaded frameworks, controls, and configuration values are stored.
+
+To use a different location, pass `--cache-dir` to any command or set the `KS_CACHE_DIR` environment variable:
+
+```bash
+kubescape scan --cache-dir /path/to/cache
+```
+
+---
+
+## Config subcommands
+
+The `kubescape config` command manages cached configuration values.
+
+### View current configuration
+
+```bash
+kubescape config view
+```
+
+### Set a configuration value
+
+```bash
+kubescape config set <key> <value>
+```
+
+Configurable keys:
+
+| Key | Description |
+|-----|-------------|
+| `accountID` | Your Kubescape SaaS account ID |
+| `cloudReportURL` | URL of the cloud reporting backend |
+
+**Examples:**
+
+```bash
+# Set account ID
+kubescape config set accountID <your-account-id>
+
+# Set cloud report URL
+kubescape config set cloudReportURL https://api.example.com
+```
+
+### Delete cached configuration
+
+```bash
+kubescape config delete
+```
+
+This removes all cached configuration values. It does not delete downloaded artifacts from the cache directory.
+
+---
+
+## Environment variables
+
+Kubescape respects the following environment variables. These are applied before CLI flags, which take precedence.
+
+| Variable | Description |
+|----------|-------------|
+| `KS_ACCOUNT` | Default account ID (equivalent to `--account`) |
+| `KS_CACHE_DIR` | Cache directory path (equivalent to `--cache-dir`) |
+| `KS_EXCLUDE_NAMESPACES` | Default namespaces to exclude (comma-separated) |
+| `KS_INCLUDE_NAMESPACES` | Default namespaces to include (comma-separated) |
+| `KS_FORMAT` | Default output format |
+| `KS_LOGGER` | Log level (`debug`, `info`, `warning`, `error`, `fatal`) |
+| `KS_LOGGER_NAME` | Logger name |
+| `KUBECONFIG` | Path to kubeconfig file |
+| `HTTPS_PROXY` | HTTPS proxy URL |
+| `HTTP_PROXY` | HTTP proxy URL |
+| `NO_PROXY` | Comma-separated list of hosts to bypass the proxy |
+
+**Example: set a proxy and restrict namespaces**
+
+```bash
+export HTTPS_PROXY=http://proxy.corp.example.com:8080
+export KS_INCLUDE_NAMESPACES=production,staging
+kubescape scan
+```
+
+---
+
+## Global CLI flags
+
+These flags are available on every Kubescape command:
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--cache-dir <path>` | Cache directory for downloaded artifacts | `~/.kubescape` |
+| `--kube-context <context>` | Kubernetes context to use | current context |
+| `-l, --logger <level>` | Log level: `debug`, `info`, `warning`, `error`, `fatal` | `warning` |
+| `--server <url>` | Backend discovery server URL | — |
+| `-h, --help` | Help for any command | — |
+
+---
+
+## Log levels
+
+Use the `-l` / `--logger` flag (or `KS_LOGGER` environment variable) to control log verbosity:
+
+| Level | Description |
+|-------|-------------|
+| `debug` | Verbose output for troubleshooting |
+| `info` | Informational messages about scan progress |
+| `warning` | Warnings that do not stop the scan (default) |
+| `error` | Errors that may affect results |
+| `fatal` | Critical errors that stop execution |
+
+To enable debug logging:
+
+```bash
+kubescape scan -l debug
+```
+
+<Tip>
+Use `-l debug` when reporting issues. Include the full debug output in your bug report to help maintainers reproduce the problem.
+</Tip>
+
+---
+
+## Exit codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success — scan completed and all thresholds passed |
+| `1` | Failure — scan failed, or a compliance/severity threshold was exceeded |
+
+The `--compliance-threshold` and `--severity-threshold` flags on `kubescape scan` control when Kubescape exits with code `1`:
+
+```bash
+# Exit 1 if compliance score falls below 80%
+kubescape scan --compliance-threshold 80
+
+# Exit 1 if any high or critical severity findings are detected
+kubescape scan --severity-threshold high
+```
+
+This makes Kubescape suitable for use as a CI/CD gate.

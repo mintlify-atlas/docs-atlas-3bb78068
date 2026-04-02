@@ -1,0 +1,110 @@
+---
+title: "Image scanning"
+description: "Scan container images for known CVEs using Kubescape's built-in Grype integration."
+---
+
+Kubescape scans container images for known vulnerabilities (CVEs) using [Grype](https://github.com/anchore/grype). The scan checks the image's OS packages and application dependencies against Grype's vulnerability database.
+
+## Basic image scan
+
+```bash
+kubescape scan image nginx:1.21
+```
+
+Kubescape pulls the image manifest, extracts its software bill of materials, and matches packages against the vulnerability database.
+
+## Verbose output
+
+By default, Kubescape shows a summary of findings. Add `-v` to display the full list of CVEs:
+
+```bash
+kubescape scan image nginx:1.21 -v
+```
+
+The verbose output includes each CVE's identifier, severity, affected package, installed version, and fixed version (if one is available):
+
+```text
+CVE-2023-1234  HIGH    libssl1.1  1.1.1n-0+deb11u4  1.1.1n-0+deb11u5
+CVE-2023-5678  MEDIUM  curl       7.74.0-1.3+deb11u7 7.74.0-1.3+deb11u10
+```
+
+## Scanning private registry images
+
+Use `--username` and `--password` to authenticate with a private container registry:
+
+```bash
+kubescape scan image myregistry.io/myimage:tag \
+  --username myuser \
+  --password mypassword
+```
+
+The short forms `-u` and `-p` are also accepted:
+
+```bash
+kubescape scan image myregistry.io/myimage:tag -u myuser -p mypassword
+```
+
+<Warning>
+  Passing credentials as flags may expose them in shell history or process listings. Prefer using environment variables or a credential helper where possible.
+</Warning>
+
+## Using an exceptions file
+
+Suppress known findings that are accepted risks or have mitigations in place:
+
+```bash
+kubescape scan image nginx:1.21 --exceptions exceptions.json
+```
+
+Excepted CVEs appear as `exclude` in the output rather than `fail`.
+
+## Offline Grype database
+
+In air-gapped or restricted environments, you can run a local copy of the Grype vulnerability database and point Kubescape at it.
+
+<Steps>
+  <Step title="Start the offline Grype database server">
+    ```bash
+    docker run --rm -p 8080:8080 quay.io/kubescape/grype-offline-db:v6-latest
+    ```
+  </Step>
+  <Step title="Scan using the local database">
+    ```bash
+    kubescape scan image nginx:latest --grype-db-url http://localhost:8080/databases/
+    ```
+  </Step>
+</Steps>
+
+The `--grype-db-url` flag accepts any URL serving a compatible Grype database. You can replace the Docker-based server with any HTTP file server hosting the database files.
+
+## Scanning cluster images
+
+To scan the images used by workloads already running in your cluster, add `--scan-images` to a cluster scan:
+
+```bash
+kubescape scan --scan-images
+```
+
+This combines misconfiguration scanning with vulnerability scanning in a single pass. The workload scan report will include CVE findings alongside configuration findings.
+
+## Matcher mode
+
+By default, Kubescape uses Grype's default matchers. To switch to CPE-based matchers (which may produce different match sets):
+
+```bash
+kubescape scan image nginx:1.21 --use-default-matchers=false
+```
+
+<Note>
+  CPE matchers can produce more results, including false positives. The default matcher mode is recommended for most use cases.
+</Note>
+
+## Severity threshold
+
+Fail with exit code `1` if any CVEs at or above a given severity are found:
+
+```bash
+kubescape scan image nginx:1.21 --severity-threshold high
+```
+
+Valid values: `low`, `medium`, `high`, `critical`.

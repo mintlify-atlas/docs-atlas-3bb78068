@@ -1,0 +1,49 @@
+---
+title: "kubescape config"
+description: "View, set, and delete cached Kubescape configuration values."
+keywords: ["kubescape config", "configuration", "accountID", "cloudReportURL", "set", "view", "delete"]
+---
+
+## Synopsis
+
+```bash
+kubescape config <subcommand> [args]
+```
+
+## Subcommands
+
+| Subcommand | Description |
+|------------|-------------|
+| `view` | Print the current cached configuration |
+| `set` | Set a configuration key to a value |
+| `delete` | Delete all cached configuration |
+
+## Configurable keys
+
+The following keys are accepted by `kubescape config set`:
+
+| Key | Description |
+|-----|-------------|
+| `accountID` | Kubescape SaaS account ID |
+| `accessKey` | Kubescape SaaS access key |
+| `cloudReportURL` | URL for submitting scan results |
+| `cloudAPIURL` | Kubescape cloud API URL |
+
+## Examples
+
+```bash
+# View the current cached configuration
+kubescape config view
+
+# Set the account ID
+kubescape config set accountID <account-id>
+
+# Set the cloud report URL
+kubescape config set cloudReportURL https://api.example.com
+
+# Set a key using key=value syntax
+kubescape config set accountID=<account-id>
+
+# Delete all cached configuration
+kubescape config delete
+```
